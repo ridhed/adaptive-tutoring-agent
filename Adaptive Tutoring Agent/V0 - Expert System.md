@@ -26,7 +26,7 @@
 |True|> 1|Any|guessing|ASK|
 |True|1|Any|mastery|ANSWER|
 # 5. Architecture: Expert System (if/elif policy)
-<img width="904" height="1126" alt="V0" src="https://github.com/user-attachments/assets/971268db-8231-4455-8301-2235b109a075" />
+<img width="712" height="896" alt="image" src="https://github.com/user-attachments/assets/4ded4fdf-fad5-4a06-87cb-ec989f7ab0e7" />
 
 # 6. What's Next
 
