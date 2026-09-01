@@ -28,7 +28,7 @@
 ![[V0.pdf]]
 # 6. What's Next
 
-- **V1 — Bayesian Knowledge Tracing:** Update beliefs with probabilities after each interaction.
+- **V1 - Bayesian Knowledge Tracing:** Update beliefs with probabilities after each interaction.
 # 7. References
 
 [1] Corbett, A. T., & Anderson, J. R. (1995). _Knowledge Tracing: Modeling the Acquisition of Procedural Knowledge.

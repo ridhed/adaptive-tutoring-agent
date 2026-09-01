@@ -11,7 +11,14 @@
 - $P(G)$ (Guess) = 0.245
 - $P(S)$ (Slip) = 0.116
 
-	***Calculated from the prior_prob_cal.py file**: {'p_initial_know': np.float64(0.591), 'p_guess': np.float64(0.245), 'p_slip': np.float64(0.116), 'p_learn': np.float64(0.152), 'p_forget': 0.0}*
+``` JSON
+[Running] python -u "prior_prob_cal.py"
+
+Calculated Parameters from Dataset:
+{'p_initial_know': np.float64(0.591), 'p_guess': np.float64(0.245), 'p_slip': np.float64(0.116), 'p_learn': np.float64(0.152), 'p_forget': 0.0}
+
+[Done] exited with code=0 in 2.004 seconds
+```
 # 2. Bayesian Updates 
 
 **Bayesian Knowledge Tracing (BKT):**  hidden binary state `Learned` or `Not Learned`
@@ -57,4 +64,4 @@ The hidden state is the true student knowledge that you cannot observe directly;
 [5] Rus, V., & Ștefănescu, D. (2016). _Non-intrusive assessment of learners' prior knowledge in dialogue-based ITS._ 
 # 8. What's Next
 
-- **V2 — POMDP:** Optimize long-term learning gain, not just immediate correctness.
+- **V2 - POMDP:** Optimize long-term learning gain, not just immediate correctness.

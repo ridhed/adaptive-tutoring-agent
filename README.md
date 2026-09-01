@@ -4,30 +4,26 @@
 
 ## 1. Project objective
 
-A tutoring agent watches a student answer multiple-choice questions — which option they picked, how long they took, how many attempts, and (as of V1) how confident they say they felt — and has to decide, after every single question: **answer it for them, ask them a follow-up, give a hint, or go back and teach a prerequisite concept.** The right choice depends on *why* the student got the question right or wrong, and that reason is never directly visible. Someone (or something) has to infer it from behavior, fast, on every question.
-
-We're building this agent in versions of increasing sophistication, and testing each version's reasoning against real feedback from practitioners on Reddit and against a real student-response dataset (ASSISTments-style `skill_builder_data.csv`).
-
+- **Core Task** = An agent observes student MCQ interactions (choice, response time, attempt count, and self-reported confidence) and decides post-question whether to `ANSWER`, `ASK`, `HINT`, or `TEACH_PRIOR`.
+    
+- **The Hidden Challenge** = True student mastery or understanding of a concept is latent and must be inferred rapidly from behavior on every single question.
+    
+- **Development Strategy** = Built iteratively in increasing sophistication tiers, validated against real practitioner feedback (Reddit) and empirical student-response data (`skill_builder_data.csv`).
 ## 2. Problem statement
 
-> The agent observes a student's response to an MCQ item: the option selected, correctness, response time, attempt number, and (from V1 onward) a self-reported confidence rating. It must select **ANSWER, ASK, HINT, or TEACH_PRIOR**, because whether the student is in a state of {Mastery, Uncertain/Partial, Knowledge Gap, Misconception, Careless, Guessing, Needs Prior} is a hidden state — not something the agent can read off directly.
+>Student cognitive states (such as mastery, knowledge gaps, or guessing) are latent and unobservable. The agent must rapidly infer these hidden states from behavioral telemetry including correctness, response time, attempt counts, and confidence to dynamically select optimal pedagogical actions (`ANSWER`, `ASK`, `HINT`, `TEACH_PRIOR`) after every single question.
 
-### A concrete example to anchor everything
-
-Student S-1084 sees a fraction-addition item for the first time. They answer correctly but say they weren't confident. Did they actually understand it, or guess right? The next item they get wrong. Did that mean they never knew it, or did they just slip up? The agent has to pick an action after *each* of these, without ever being told the true answer to "do they know this skill?"
-
+**Illustrative Scenario: Student S-1084**
+Student S-1084 answers a fraction problem correctly with **low confidence** (lucky guess or true mastery?) and misses the next item (**slip or real gap?**). The agent must decide whether to advance, hint, or remediate after every turn, operating entirely under uncertainty without ever directly seeing what the student actually knows.
 ## 3. Decision-making architectures (versions)
 
-| Version | Architecture | What it adds |
-|---|---|---|
-| **V0** | Expert System (if/elif rule table) | A fixed decision table mapping (correctness, attempt number, response time) → hidden state → action. No memory across questions, no probabilities. |
-| **V1** | Bayesian Knowledge Tracing (BKT) | Replaces hard-coded rules with a probability P(Learned) that updates after every response using Bayes' rule, plus a self-reported confidence signal (added after Reddit feedback — see `discussion-record.md`) to catch guesses that look like mastery. |
-| **V2 (next)** | Partially Observable Markov Decision Process (POMDP) | Optimizes for long-term learning gain instead of reacting to just the current question — plans a sequence of actions under uncertainty rather than a single best response. |
-| *(possible later work)* | Deep Knowledge Tracing (DKT) / Reinforcement Learning | Continuous hidden state via LSTM (DKT) and learned, rather than hand-specified, action policies (RL) — see `Literature_Review.md`. |
-
+| Version                 | Architecture                                          | What it adds                                                                                                                                                                                                                                            |
+| ----------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **V0**                  | Expert System (if/elif rule table)                    | A fixed decision table mapping (correctness, attempt number, response time) → hidden state → action. No memory across questions, no probabilities.                                                                                                      |
+| **V1**                  | Bayesian Knowledge Tracing (BKT)                      | Replaces hard-coded rules with a probability P(Learned) that updates after every response using Bayes' rule, plus a self-reported confidence signal (added after Reddit feedback — see `discussion-record.md`) to catch guesses that look like mastery. |
+| **V2 (next)**           | Partially Observable Markov Decision Process (POMDP)  | Optimizes for long-term learning gain instead of reacting to just the current question — plans a sequence of actions under uncertainty rather than a single best response.                                                                              |
+| *(possible later work)* | Deep Knowledge Tracing (DKT) / Reinforcement Learning | Continuous hidden state via LSTM (DKT) and learned, rather than hand-specified, action policies (RL) — see `Literature_Review.md`.                                                                                                                      |
 ## 4. Evidence the agent uses (per interaction)
-
-These are the observable signals that stand in for the six data-quality-style "checks" in this project — the raw numbers the agent turns hidden-state inference into:
 
 | Signal | Question it answers | Introduced in |
 |---|---|---|
@@ -36,7 +32,6 @@ These are the observable signals that stand in for the six data-quality-style "c
 | **Attempt number** | Is this a first try, or have they already tried and failed on this item? | V0 |
 | **Hint requests** | Did they need scaffolding to get here? | V1 input, not yet used in the V1 policy table |
 | **Self-reported confidence** (HIGH/MEDIUM/LOW) | Do they *believe* they know it, independent of whether they're right? | V1, added after Reddit feedback (see below) |
-
 ## 5. Agent design (V1 — current)
 
 | Part | Definition |
@@ -49,10 +44,9 @@ These are the observable signals that stand in for the six data-quality-style "c
 | **Policy** | If P(Lₜ) ≥ 0.85 and correct and confidence = HIGH → Answer. If P(Lₜ) ≥ 0.85 but confidence = LOW or the item was missed → Ask. If 0.40 ≤ P(Lₜ) < 0.85 → Hint. If P(Lₜ) < 0.40 → Teach Prior. |
 | **Feedback** | Each (belief, action, next-response outcome) triple can be used to re-estimate per-skill P(guess)/P(slip) instead of relying on one global prior forever — see `probability-decision-record.md` for a worked three-step example. |
 
-**Human-style reasoning added:** a Reddit conversation on r/AIEducation (`discussion-record.md`) raised that learners may be more willing to admit uncertainty to an AI than to a human teacher. That turned into a concrete design change: **self-reported confidence is now a second observation, alongside correctness**, used specifically to catch cases where a correct answer is actually a lucky guess rather than real mastery.
-
-**How we're building it:** each version is implemented as a small, standalone Python module (`V0_agent.py`, `V1_agent.py`) that can be run directly against `skill_builder_data.csv`, with the probabilistic parameters for V1 learned from the same dataset (`prior_prob_cal.py`) rather than guessed.
-
+- **Practitioner Insight:** Inspired by a Reddit discussion (`discussion-record.md`), noting that learners admit uncertainty more readily to an AI, the system adds self-reported confidence to catch lucky guesses.
+    
+- **Building Process:** Implemented as standalone Python modules (`V0_agent.py`, `V1_agent.py`) running against `skill_builder_data.csv`, with probabilistic parameters empirically derived via `prior_prob_cal.py`.
 ## 6. Project files
 
 | File | Purpose |
@@ -64,9 +58,8 @@ These are the observable signals that stand in for the six data-quality-style "c
 | `discussion-record.md` | External practitioner feedback (Reddit) and the design change it produced |
 | `research-file.md` | Glossary of terms, search queries, and relevant communities used while researching this problem |
 | `Literature_Review.md` | Annotated bibliography connecting each open design question to a specific paper |
-
 ## 7. What's next
 
-- **V2 — POMDP:** stop optimizing for "get the current question right" and start optimizing for long-term learning gain — planning a sequence of actions under uncertainty, in the spirit of Rafferty (2014) and Kadir (2025) (see `Literature_Review.md`).
+- **V2 - POMDP:** stop optimizing for "get the current question right" and start optimizing for long-term learning gain — planning a sequence of actions under uncertainty, in the spirit of Rafferty (2014) and Kadir (2025) (see `Literature_Review.md`).
 - Incorporate hint-request count into the V1 policy table (currently collected as an input but not yet used in the decision rule).
 - Move from a single global prior to per-skill, and eventually per-student, priors as more interaction data accumulates.

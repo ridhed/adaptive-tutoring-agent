@@ -1,0 +1,94 @@
+[
+  {
+    "scenario_id": "scenario_a",
+    "name": "Correct Answer with High Confidence",
+    "description": "Evaluates a student with average baseline knowledge who answers correctly and reports high confidence, successfully reaching the mastery threshold.",
+    "input_parameters": {
+      "p_know": 0.591,
+      "is_correct": true,
+      "confidence": "HIGH",
+      "params": {
+        "p_initial_know": 0.591,
+        "p_guess": 0.245,
+        "p_slip": 0.116,
+        "p_learn": 0.152,
+        "p_forget": 0.0
+      }
+    },
+    "expected_outputs": {
+      "evidence_probability": 0.6226,
+      "bayes_posterior": 0.8391,
+      "final_posterior": 0.8635,
+      "action": "ANSWER"
+    }
+  },
+  {
+    "scenario_id": "scenario_b",
+    "name": "Incorrect Answer with Low Confidence",
+    "description": "Evaluates a student with baseline knowledge who answers incorrectly and reports low confidence, resulting in a low posterior state triggering foundational remediation.",
+    "input_parameters": {
+      "p_know": 0.591,
+      "is_correct": false,
+      "confidence": "LOW",
+      "params": {
+        "p_initial_know": 0.591,
+        "p_guess": 0.245,
+        "p_slip": 0.116,
+        "p_learn": 0.152,
+        "p_forget": 0.0
+      }
+    },
+    "expected_outputs": {
+      "evidence_probability": 0.3774,
+      "bayes_posterior": 0.1817,
+      "final_posterior": 0.3061,
+      "action": "TEACH_PRIOR"
+    }
+  },
+  {
+    "scenario_id": "scenario_c",
+    "name": "Mastery State with Low Confidence (Careless Slip / Guess check)",
+    "description": "Evaluates a student with near-certain mastery history who reports low confidence despite a correct answer, triggering an ASK action to verify understanding.",
+    "input_parameters": {
+      "p_know": 0.980,
+      "is_correct": true,
+      "confidence": "LOW",
+      "params": {
+        "p_initial_know": 0.591,
+        "p_guess": 0.245,
+        "p_slip": 0.116,
+        "p_learn": 0.152,
+        "p_forget": 0.0
+      }
+    },
+    "expected_outputs": {
+      "evidence_probability": 0.8712,
+      "bayes_posterior": 0.9944,
+      "final_posterior": 0.9952,
+      "action": "ASK"
+    }
+  },
+  {
+    "scenario_id": "scenario_d",
+    "name": "Uncertain/Partial Knowledge State",
+    "description": "Evaluates a struggling student who gets a correct answer, landing their posterior in the middle uncertainty band and triggering a scaffolded hint.",
+    "input_parameters": {
+      "p_know": 0.300,
+      "is_correct": true,
+      "confidence": "MEDIUM",
+      "params": {
+        "p_initial_know": 0.591,
+        "p_guess": 0.245,
+        "p_slip": 0.116,
+        "p_learn": 0.152,
+        "p_forget": 0.0
+      }
+    },
+    "expected_outputs": {
+      "evidence_probability": 0.4367,
+      "bayes_posterior": 0.6073,
+      "final_posterior": 0.6670,
+      "action": "HINT"
+    }
+  }
+]
