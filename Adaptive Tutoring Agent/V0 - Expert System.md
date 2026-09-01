@@ -25,7 +25,8 @@
 |True|> 1|Any|guessing|ASK|
 |True|1|Any|mastery|ANSWER|
 # 5. Architecture: Expert System (if/elif policy)
-obsidian://open?vault=Deliverables&file=Attachments%2FV0.pdf
+<img width="904" height="1126" alt="V0" src="https://github.com/user-attachments/assets/971268db-8231-4455-8301-2235b109a075" />
+
 # 6. What's Next
 
 - **V1 - Bayesian Knowledge Tracing:** Update beliefs with probabilities after each interaction.
