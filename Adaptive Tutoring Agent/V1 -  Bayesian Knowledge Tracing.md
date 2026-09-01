@@ -33,10 +33,10 @@ Calculated Parameters from Dataset:
 
 **Bayesian Knowledge Tracing (BKT):** A hidden binary state representing whether a skill is `Learned` or `Not Learned`. BKT updates its belief about the student's knowledge based on observed evidence, such as correctness [2].
 
-**1. Prior Belief** ($P(L_{t-1})$): 
+**1. Prior Belief** (`P(L_{t-1})`):  
 The probability that the student knows the skill before the current interaction.
 
-**2. Likelihood** ($P(Obs \mid L)$):
+**2. Likelihood** (`P(Obs | L)`):  
 
 - If the observation is **Correct** ($Obs = 1$):
   - Master = $1 - P(S)$
