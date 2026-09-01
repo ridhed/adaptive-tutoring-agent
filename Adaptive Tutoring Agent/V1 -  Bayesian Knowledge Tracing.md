@@ -76,12 +76,9 @@ $$
 Accounts for the probability that the student acquires or forgets the skill during this step.
 
 $$
-P(L_t) =
-P(L_t \mid Obs)
-+
-(1-P(L_t \mid Obs))P(T)
--
-P(L_t \mid Obs)P(F)
+P(L_t) = P(L_t \mid Obs)
++ [1-P(L_t \mid Obs)]P(T)
+- P(L_t \mid Obs)P(F)
 $$
 
 [4]
