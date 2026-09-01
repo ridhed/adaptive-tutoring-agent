@@ -66,7 +66,14 @@ $$
 
 **4. Posterior Probability (Bayes' Theorem):**
 
-`P(L_t | Obs) = [P(L_{t-1}) × P(Obs | L_{t-1})] / P(Obs)`
+<p align="center">
+  <i>P(L<sub>t</sub> | Obs)</i> =
+  <span>
+    <i>P(L<sub>t-1</sub>) P(Obs | L<sub>t-1</sub>)</i>
+  </span>
+  /
+  <i>P(Obs)</i>
+</p>
 
 **5. Learning Transition (`P(L_t)`):**  
 Accounts for the probability that the student acquires or forgets the skill during this step.
