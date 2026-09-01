@@ -72,19 +72,18 @@ P(L_t \mid Obs) =
 {P(Obs)}
 $$
 
-**5. Learning Transition**  
-$P(L_t)$ [4]:
+**5. Learning Transition**  $P(L_t)$ [4]:
 
 Accounts for the probability that the student acquires or forgets the skill during this step.
 
-\[
+$$
 P(L_t) =
 P(L_t \mid Obs)
 +
 (1-P(L_t \mid Obs))P(T)
 -
 P(L_t \mid Obs)P(F)
-\]
+$$
 
 ## 3. Hidden States & Actions
 
