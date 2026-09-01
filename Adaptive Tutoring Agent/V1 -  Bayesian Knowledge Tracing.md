@@ -80,6 +80,7 @@ P(L_t) = P(L_t \mid Obs) + (1-P(L_t \mid Obs))P(T) - P(L_t \mid Obs)P(F)
 $$
 
 ### 3. Hidden States & Actions
+---------------------------------
 
 The hidden state represents the student's true knowledge, which cannot be observed directly. The tutor only observes evidence and uses it to infer the state.
 
