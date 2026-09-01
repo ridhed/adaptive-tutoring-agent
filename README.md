@@ -32,7 +32,7 @@ Student S-1084 answers a fraction problem correctly with **low confidence** (luc
 | **Attempt number** | Is this a first try, or have they already tried and failed on this item? | V0 |
 | **Hint requests** | Did they need scaffolding to get here? | V1 input, not yet used in the V1 policy table |
 | **Self-reported confidence** (HIGH/MEDIUM/LOW) | Do they *believe* they know it, independent of whether they're right? | V1, added after Reddit feedback (see below) |
-## 5. Agent design (V1 — current)
+## 5. Agent design (V1 - current)
 
 | Part | Definition |
 |---|---|
