@@ -72,7 +72,7 @@ P(L_t \mid Obs) =
 {P(Obs)}
 $$
 
-**5. Learning Transition ($P(L_t)$):**  
+**5. Learning Transition (`P(L_t)`):**  
 Accounts for the probability that the student acquires or forgets the skill during this step.
 
 $$
