@@ -50,7 +50,8 @@ The hidden state is the true student knowledge that you cannot observe directly;
 |$0.40 - 0.84$|Any|Any|Uncertain|HINT|
 |$\le 0.40$|False|Any|Knowledge Gap|TEACH_PRIOR|
 # 5. Architechture
-![[V1.pdf]]
+<img width="723" height="812" alt="V1" src="https://github.com/user-attachments/assets/c55e124a-b63b-43bf-9d23-ac5c8deb0169" />
+
 # 7. References
 
 [1] Corbett, A. T., & Anderson, J. R. (1995). _Knowledge Tracing: Modeling the Acquisition of Procedural Knowledge._ 
