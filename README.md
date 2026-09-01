@@ -1,4 +1,4 @@
-# Tutor Agent
+# Adaptive Tutor Agent
 
 ### Scenario: MCQ tutoring under hidden student knowledge
 
