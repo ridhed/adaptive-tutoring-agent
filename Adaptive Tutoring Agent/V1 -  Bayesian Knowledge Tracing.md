@@ -1,5 +1,6 @@
 # 1. Input & Prior Probabilities
 **Dataset:** [Assistment2009](https://doi.org/10.57760/sciencedb.j00133.00253 )
+
 **Inputs:**
 - `student_id`, `problem_id`, `kc_id`, `correct`, `time_seconds`, `hint_requested`, `attempt_number`
 - `confidence` $\in$ {HIGH, MEDIUM, LOW}  [5] 
@@ -11,33 +12,86 @@
 - $P(G)$ (Guess) = 0.245
 - $P(S)$ (Slip) = 0.116
 
-``` JSON
+```text
 [Running] python -u "prior_prob_cal.py"
 
 Calculated Parameters from Dataset:
-{'p_initial_know': np.float64(0.591), 'p_guess': np.float64(0.245), 'p_slip': np.float64(0.116), 'p_learn': np.float64(0.152), 'p_forget': 0.0}
+{
+    'p_initial_know': np.float64(0.591),
+    'p_guess': np.float64(0.245),
+    'p_slip': np.float64(0.116),
+    'p_learn': np.float64(0.152),
+    'p_forget': 0.0
+}
 
 [Done] exited with code=0 in 2.004 seconds
 ```
+
 # 2. Bayesian Updates 
 
-**Bayesian Knowledge Tracing (BKT):**  hidden binary state `Learned` or `Not Learned`
-**Updates beliefs based on Evidence (correctness) [2] 
+## 2. Bayesian Knowledge Tracing (BKT)
 
-**1. Prior Belief ($P(L_{t-1})$):** The probability the student knows the skill before the current interaction.  
-**2. Likelihood ($P(Obs \mid L)$):** 
-	 If Observation is Correct ($Obs=1$): Master = $1 - P(S)$, Non-Master = $P(G)$.
-     If Observation is Incorrect ($Obs=0$): Master = $P(S)$, Non-Master = $1 - P(G)$.
-**3. Evidence / Marginal Probability ($P(Obs)$):** 
-$$P(Obs=1) = P(L_{t-1})(1-P(S)) + (1-P(L_{t-1}))P(G)$$$$P(Obs=0) = P(L_{t-1})P(S) + (1-P(L_{t-1}))(1-P(G))$$ **4. Posterior Probability (Bayes' Theorem):** 
-$$P(L_t \mid Obs) = \frac{P(L_{t-1}) P(Obs \mid L_{t-1})}{P(Obs)}$$
-**5. Learning Transition ($P(L_t)$):** Accounting for the probability that the student acquired (or forgot) the skill during this step.$$P(L_t) = P(L_t \mid Obs) + (1 - P(L_t \mid Obs)) P(T) - P(L_t \mid Obs)P(F)$$[4]
-# 3. Hidden States & Actions
+**Bayesian Knowledge Tracing (BKT):** A hidden binary state representing whether a skill is `Learned` or `Not Learned`. BKT updates its belief about the student's knowledge based on observed evidence, such as correctness [2].
 
-The hidden state is the true student knowledge that you cannot observe directly; you only see evidence to infer the state.
+**1. Prior Belief ($P(L_{t-1})$):**  
+The probability that the student knows the skill before the current interaction.
+
+**2. Likelihood ($P(Obs \mid L)$):**
+
+- If the observation is **Correct** ($Obs = 1$):
+  - Master = $1 - P(S)$
+  - Non-Master = $P(G)$
+
+- If the observation is **Incorrect** ($Obs = 0$):
+  - Master = $P(S)$
+  - Non-Master = $1 - P(G)$
+
+**3. Evidence / Marginal Probability ($P(Obs)$):**
+
+For a correct observation:
+
+$$
+P(Obs=1) =
+P(L_{t-1})(1-P(S)) +
+(1-P(L_{t-1}))P(G)
+$$
+
+For an incorrect observation:
+
+$$
+P(Obs=0) =
+P(L_{t-1})P(S) +
+(1-P(L_{t-1}))(1-P(G))
+$$
+
+**4. Posterior Probability (Bayes' Theorem):**
+
+$$
+P(L_t \mid Obs) =
+\frac{P(L_{t-1})P(Obs \mid L_{t-1})}
+{P(Obs)}
+$$
+
+**5. Learning Transition ($P(L_t)$):**  
+Accounts for the probability that the student acquires or forgets the skill during this step.
+
+$$
+P(L_t) =
+P(L_t \mid Obs)
++
+(1-P(L_t \mid Obs))P(T)
+-
+P(L_t \mid Obs)P(F)
+$$
+
+[4]
+
+### 3. Hidden States & Actions
+
+The hidden state represents the student's true knowledge, which cannot be observed directly. The tutor only observes evidence and uses it to infer the state.
 
 - **Mastery:** $P(L_t) \ge 0.85$
-- **Uncertain/Partial:** $0.40 < P(L_t) < 0.85$
+- **Uncertain / Partial:** $0.40 < P(L_t) < 0.85$
 - **Knowledge Gap:** $P(L_t) \le 0.40$
 
 **Action Space:** {`ASK`, `HINT`, `TEACH_PRIOR`, `ANSWER`}.
