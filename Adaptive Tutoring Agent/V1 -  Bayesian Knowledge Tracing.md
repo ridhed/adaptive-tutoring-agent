@@ -33,51 +33,60 @@ Calculated Parameters from Dataset:
 
 **Bayesian Knowledge Tracing (BKT):** A hidden binary state representing whether a skill is `Learned` or `Not Learned`. BKT updates its belief about the student's knowledge based on observed evidence, such as correctness [2].
 
-    **1. Prior Belief** (`P(L_{t-1})`):  
-    The probability that the student knows the skill before the current interaction.
-    
-    **2. Likelihood** (`P(Obs | L)`):  
-    
-    - If the observation is **Correct** ($Obs = 1$):
-      - Master = $1 - P(S)$
-      - Non-Master = $P(G)$
-    
-    - If the observation is **Incorrect** ($Obs = 0$):
-      - Master = $P(S)$
-      - Non-Master = $1 - P(G)$
-    
-    **3. Evidence / Marginal Probability ($P(Obs)$):**
-    
-    For a correct observation:
-    
-    $$
-    P(Obs=1) =
-    P(L_{t-1})(1-P(S)) +
-    (1-P(L_{t-1}))P(G)
-    $$
-    
-    For an incorrect observation:
-    
-    $$
-    P(Obs=0) =
-    P(L_{t-1})P(S) +
-    (1-P(L_{t-1}))(1-P(G))
-    $$
-    
-    **4. Posterior Probability (Bayes' Theorem):**
-    
-    $$
-    P(L_t \mid Obs) =
-    \frac{P(L_{t-1})P(Obs \mid L_{t-1})}
-    {P(Obs)}
-    $$
-    
-    **5. Learning Transition (`P(L_t)`):**  [4]
-    Accounts for the probability that the student acquires or forgets the skill during this step.
-    
-    $$
-    P(L_t) = P(L_t \mid Obs) + (1-P(L_t \mid Obs))P(T) - P(L_t \mid Obs)P(F)
-    $$
+## 2. Bayesian Knowledge Tracing (BKT)
+
+**Bayesian Knowledge Tracing (BKT):** A hidden binary state representing whether a skill is `Learned` or `Not Learned`. BKT updates its belief about the student's knowledge based on observed evidence, such as correctness [2].
+
+- **1. Prior Belief** ($P(L_{t-1})$):  
+  The probability that the student knows the skill before the current interaction.
+
+- **2. Likelihood** ($P(Obs \mid L)$):
+
+  - If the observation is **Correct** ($Obs = 1$):
+    - Master = $1 - P(S)$
+    - Non-Master = $P(G)$
+
+  - If the observation is **Incorrect** ($Obs = 0$):
+    - Master = $P(S)$
+    - Non-Master = $1 - P(G)$
+
+- **3. Evidence / Marginal Probability** ($P(Obs)$):
+
+  For a correct observation:
+
+  $$
+  P(Obs=1) =
+  P(L_{t-1})(1-P(S)) +
+  (1-P(L_{t-1}))P(G)
+  $$
+
+  For an incorrect observation:
+
+  $$
+  P(Obs=0) =
+  P(L_{t-1})P(S) +
+  (1-P(L_{t-1}))(1-P(G))
+  $$
+
+- **4. Posterior Probability (Bayes' Theorem):**
+
+  $$
+  P(L_t \mid Obs) =
+  \frac{P(L_{t-1})P(Obs \mid L_{t-1})}
+  {P(Obs)}
+  $$
+
+- **5. Learning Transition** ($P(L_t)$) [4]:  
+  Accounts for the probability that the student acquires or forgets the skill during this step.
+
+  $$
+  P(L_t) =
+  P(L_t \mid Obs)
+  +
+  (1-P(L_t \mid Obs))P(T)
+  -
+  P(L_t \mid Obs)P(F)
+  $$
 
 ### 3. Hidden States & Actions
 
