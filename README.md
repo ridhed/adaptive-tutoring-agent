@@ -60,6 +60,6 @@ Student S-1084 answers a fraction problem correctly with **low confidence** (luc
 | `Literature_Review.md` | Annotated bibliography connecting each open design question to a specific paper |
 ## 7. What's next
 
-- **V2 - POMDP:** stop optimizing for "get the current question right" and start optimizing for long-term learning gain — planning a sequence of actions under uncertainty, in the spirit of Rafferty (2014) and Kadir (2025) (see `Literature_Review.md`).
+- **V2 - POMDP:** stop optimizing for "get the current question right" and start optimizing for long-term learning gain and planning a sequence of actions under uncertainty, in the spirit of Rafferty (2014) and Kadir (2025) (see `Literature_Review.md`).
 - Incorporate hint-request count into the V1 policy table (currently collected as an input but not yet used in the decision rule).
 - Move from a single global prior to per-skill, and eventually per-student, priors as more interaction data accumulates.
