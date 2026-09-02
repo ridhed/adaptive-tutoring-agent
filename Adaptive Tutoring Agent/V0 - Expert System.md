@@ -1,3 +1,4 @@
+<img width="676" height="757" alt="Screenshot 2026-09-02 101443" src="https://github.com/user-attachments/assets/1f15e2fc-e012-4105-a8fe-3f95db7e1251" />
 # 1. Dataset  Input
 **Dataset:** [Assistment2009](https://doi.org/10.57760/sciencedb.j00133.00253 )
 
@@ -26,7 +27,8 @@
 |True|> 1|Any|guessing|ASK|
 |True|1|Any|mastery|ANSWER|
 # 5. Architecture: Expert System (if/elif policy)
-<img width="712" height="896" alt="image" src="https://github.com/user-attachments/assets/4ded4fdf-fad5-4a06-87cb-ec989f7ab0e7" />
+<img width="676" height="757" alt="Screenshot 2026-09-02 101443" src="https://github.com/user-attachments/assets/00211230-a50c-47fb-accc-3948f01a3245" />
+
 
 # 6. What's Next
 
