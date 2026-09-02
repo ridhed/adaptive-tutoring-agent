@@ -8,7 +8,8 @@
     
 - **The Hidden Challenge** = True student mastery or understanding of a concept is latent and must be inferred rapidly from behavior on every single question.
     
-- **Development Strategy** = Built iteratively in increasing sophistication tiers, validated against real practitioner feedback (Reddit) and empirical student-response data (`skill_builder_data.csv`).
+- **Dataset** = Built iteratively Empirical student-response data (`skill_builder_data.csv`) from https://www.scidb.cn/en/detail?dataSetId=b1c3986fc96d435e8b258a9b5c36cd7c
+  
 ## 2. Problem statement
 
 >Student cognitive states (such as mastery, knowledge gaps, or guessing) are latent and unobservable. The agent must rapidly infer these hidden states from behavioral telemetry including correctness, response time, attempt counts, and confidence to dynamically select optimal pedagogical actions (`ANSWER`, `ASK`, `HINT`, `TEACH_PRIOR`) after every single question.
