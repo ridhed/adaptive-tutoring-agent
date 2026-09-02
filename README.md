@@ -21,7 +21,6 @@
 | **V0**                  | Expert System (if/elif rule table)                    | A fixed decision table mapping (correctness, attempt number, response time) → hidden state → action. No memory across questions, no probabilities.                                                                                                      |
 | **V1**                  | Bayesian Knowledge Tracing (BKT)                      | Replaces hard-coded rules with a probability P(Learned) that updates after every response using Bayes' rule, plus a self-reported confidence signal (added after Reddit feedback — see `discussion-record.md`) to catch guesses that look like mastery. |
 | **V2 (next)**           | Partially Observable Markov Decision Process (POMDP)  | Optimizes for long-term learning gain instead of reacting to just the current question.                                                                             |
-|
 ## 4. Evidence the agent uses (per interaction)
 
 | Signal | Question it answers | Introduced in |
