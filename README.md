@@ -28,7 +28,7 @@
 | **Correctness** | Did they get it right? | V0 |
 | **Response time** (discretized FAST/SLOW vs. expected time) | Did they seem to rush (careless) or struggle (knowledge gap)? | V0 |
 | **Attempt number** | Is this a first try, or have they already tried and failed on this item? | V0 |
-| **Hint requests** | Did they need scaffolding to get here? | V1 input |
+| **Hint requests** | Did they need scaffolding to get here? | V1 |
 | **Self-reported confidence** (HIGH/MEDIUM/LOW) | Do they *believe* they know it, independent of whether they're right? | V1, added after Reddit feedback |
 
 ## 5. Agent design (V1 - current)
