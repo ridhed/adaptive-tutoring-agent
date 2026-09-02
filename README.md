@@ -14,8 +14,6 @@
 
 >Student cognitive states (such as mastery, knowledge gaps, or guessing) are latent and unobservable. The agent must rapidly infer these hidden states from behavioral telemetry including correctness, response time, attempt counts, and confidence to dynamically select optimal pedagogical actions (`ANSWER`, `ASK`, `HINT`, `TEACH_PRIOR`) after every single question.
 
-**Illustrative Scenario: Student S-1084**
-Student S-1084 answers a fraction problem correctly with **low confidence** (lucky guess or true mastery?) and misses the next item (**slip or real gap?**). The agent must decide whether to advance, hint, or remediate after every turn, operating entirely under uncertainty without ever directly seeing what the student actually knows.
 ## 3. Decision-making architectures (versions)
 
 | Version                 | Architecture                                          | What it adds                                                                                                                                                                                                                                            |
