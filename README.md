@@ -51,13 +51,15 @@
 
 | File | Purpose |
 |---|---|
-| `V0 - Expert System.md` / `V0_agent.py` | Rule-based baseline: decision table + implementation |
-| `V1 - Bayesian Knowledge Tracing.md` / `V1_agent.py` | Probabilistic belief-updating version + implementation |
-| `prior_prob_cal.py` | Learns P(L₀), P(guess), P(slip), P(learn), P(forget) from `skill_builder_data.csv` |
+| `Adaptive Tutoring Agent/V0/V0 - Expert System.md` / `Adaptive Tutoring Agent/V0/V0_agent.py` | Rule-based baseline: decision table and implementation |
+| `Adaptive Tutoring Agent/V1/V1 - Bayesian Knowledge Tracing.md` / `Adaptive Tutoring Agent/V1/V1_agent.py` | Probabilistic belief-updating version and implementation |
+| `Adaptive Tutoring Agent/V1/experiments.json` | Four reproducible V1 test scenarios and their expected outputs |
 | `probability-decision-record.md` | Worked, step-by-step Bayesian update example across several interactions |
-| `discussion-record.md` | External practitioner feedback (Reddit) and the design change it produced |
+| `discussion-record.md` | Reddit contributions, discussion outcomes, and resulting design changes |
 | `research-file.md` | Glossary of terms, search queries, and relevant communities used while researching this problem |
-| `Literature_Review.md` | Annotated bibliography connecting each open design question to a specific paper |
+| `linkedin-posts.md` | Published LinkedIn posts and their links |
+| `design/pdfs/v0-1.png` / `design/pdfs/v1-1.png` | Rendered workflow visuals for V0 and V1 |
+| `Research Papers/` | Source papers on knowledge tracing, educational assessment, and intelligent tutoring systems |
 
 ## 7. What's next
 - Incorporate hint-request count into the V1 policy table (currently collected as an input but not yet used in the decision rule).
