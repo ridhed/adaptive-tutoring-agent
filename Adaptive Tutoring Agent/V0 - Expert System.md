@@ -1,4 +1,3 @@
-<img width="676" height="757" alt="Screenshot 2026-09-02 101443" src="https://github.com/user-attachments/assets/1f15e2fc-e012-4105-a8fe-3f95db7e1251" />
 # 1. Dataset  Input
 **Dataset:** [Assistment2009](https://doi.org/10.57760/sciencedb.j00133.00253 )
 
