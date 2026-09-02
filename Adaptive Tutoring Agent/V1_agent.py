@@ -46,7 +46,6 @@ def run_experiments_from_file(json_filepath="experiments.json"):
         confidence = inp["confidence"]
         params = inp["params"]
         
-        # Execute BKT update function
         ev, post_ev, final_p, action = bkt_update(p_know, is_correct, confidence, params)
         
         print(f"[{s_id.upper()}] {name}")
