@@ -1,5 +1,6 @@
 # 1. Dataset  Input
 **Dataset:** [Assistment2009](https://doi.org/10.57760/sciencedb.j00133.00253 )
+
 **Input Parameters:**
 - `student_id`: String (Unique student identifier)  
 - `kc_id`: String (Knowledge component/skill tag)
@@ -25,7 +26,9 @@
 |True|> 1|Any|guessing|ASK|
 |True|1|Any|mastery|ANSWER|
 # 5. Architecture: Expert System (if/elif policy)
-![[V0.pdf]]
+<img width="676" height="757" alt="Screenshot 2026-09-02 101443" src="https://github.com/user-attachments/assets/00211230-a50c-47fb-accc-3948f01a3245" />
+
+
 # 6. What's Next
 
 - **V1 - Bayesian Knowledge Tracing:** Update beliefs with probabilities after each interaction.
