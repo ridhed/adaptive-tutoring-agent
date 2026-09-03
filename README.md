@@ -4,9 +4,9 @@
 
 ## 1. Project objective
 
-- **Core Task** = An agent observes student MCQ interactions (choice, response time, attempt count, and self-reported confidence) and decides whether to `ANSWER`, `ASK`, `HINT`, or `TEACH_PRIOR`.
+- **Core Task:** An agent observes student MCQ interactions (choice, response time, attempt count, and self-reported confidence) and decides whether to `ANSWER`, `ASK`, `HINT`, or `TEACH_PRIOR`.
     
-- **The Hidden Challenge** = True student mastery or understanding of a concept is latent and must be inferred from behavior on every single question.
+- **The Hidden Challenge:** True student mastery or understanding of a concept is latent and must be inferred from behavior on every single question.
     
 - **Dataset:** Built iteratively using student-response data (`skill_builder_data.csv`) from the [SciDB Assistments Student Learning Records Dataset](https://www.scidb.cn/en/detail?dataSetId=b1c3986fc96d435e8b258a9b5c36cd7c).
   
