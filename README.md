@@ -50,38 +50,26 @@
 ## 6. Project Files
 
 ```text
-Adaptive-Tutoring-Agent/
-│
+adaptive-tutoring-agent/
+├── .git/
 ├── README.md
-│
-├── data/
-│   └── skill_builder_data.csv
-│
+├── analysis/
+│   ├── prior_prob_cal.py
+│   └── probability-decision-record.md
+├── design/
+├── research/
+│   ├── research-file.md
+│   └── Research Papers/
+├── socials/
+│   ├── discussion-record.md
+│   └── linkedin-posts.md
 ├── V0/
 │   ├── V0 - Expert System.md
 │   └── V0_agent.py
-│
-├── V1/
-│   ├── V1 - Bayesian Knowledge Tracing.md
-│   ├── V1_agent.py
-│   └── experiments.json
-│
-├── research/
-│   ├── research-file.md
-│   ├── discussion-record.md
-│   └── Research Papers/
-│
-├── analysis/
-│   ├── probability-decision-record.md
-│   └── prior_prob_cal.py
-│
-├── design/
-│   └── pdfs/
-│       ├── v0-1.png
-│       └── v1-1.png
-│
-└── documentation/
-    └── linkedin-posts.md
+└── V1/
+    ├── experiments.json
+    ├── V1 -  Bayesian Knowledge Tracing.md
+    └── V1_agent.py
 ```
 
 ## 7. What's next
