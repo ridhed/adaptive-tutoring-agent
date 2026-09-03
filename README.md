@@ -37,7 +37,7 @@
 | Features | How it is used in the workflow |
 |---|---|
 | **Input** | `student_id`, `problem_id`, `kc_id` (skill), `correct`, `time_seconds`, `hint_requested`, `attempt_number`, `confidence` |
-| **Hidden state** | Learned / Not Learned (binary, BKT), surfaced as: Mastery (P(L) ≥ 0.85), Uncertain/Partial (0.40–0.84), Knowledge Gap (≤ 0.40) |
+| **Hidden state** | Learned / Not Learned (binary, BKT), Mastery (P(L) ≥ 0.85), Uncertain (0.40–0.84), Knowledge Gap (≤ 0.40) |
 | **Belief** | P(Lₜ) = probability the student has learned the skill global prior, (P(L₀) = 0.591, learned from `skill_builder_data.csv` via `prior_prob_cal.py`) and updated with every new response |
 | **Action** | **Answer**, **Ask**, **Hint**, **Teach Prior** |
 | **Policy** | [P(Lₜ) ≥ 0.85 = Answer], [P(Lₜ) ≥ 0.85 = Ask], [0.40 ≤ P(Lₜ) < 0.85= Hint], [P(Lₜ) < 0.40 → Teach Prior.] |
