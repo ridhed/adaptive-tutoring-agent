@@ -48,8 +48,9 @@
     
 - **Building Process:** Implemented as standalone Python modules (`V0_agent.py`, `V1_agent.py`) running against `skill_builder_data.csv`, with probabilistic parameters derived via `prior_prob_cal.py`.
 
-## 6. Project files
+## 6. Project Files
 
+```text
 Adaptive-Tutoring-Agent/
 │
 ├── README.md
@@ -82,6 +83,7 @@ Adaptive-Tutoring-Agent/
 │
 └── documentation/
     └── linkedin-posts.md
+```
 
 ## 7. What's next
 - Incorporate hint-request count into the V1 policy table (currently collected as an input but not yet used in the decision rule).
