@@ -34,7 +34,7 @@
 
 ## 5. Agent design (V1 - current)
 
-| Part | Definition |
+| Features | How it is used in the workflow |
 |---|---|
 | **Input** | `student_id`, `problem_id`, `kc_id` (skill), `correct`, `time_seconds`, `hint_requested`, `attempt_number`, `confidence` |
 | **Hidden state** | Learned / Not Learned (binary, BKT), surfaced as: Mastery (P(L) ≥ 0.85), Uncertain/Partial (0.40–0.84), Knowledge Gap (≤ 0.40) |
