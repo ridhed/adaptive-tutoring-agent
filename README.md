@@ -38,11 +38,10 @@
 |---|---|
 | **Input** | `student_id`, `problem_id`, `kc_id` (skill), `correct`, `time_seconds`, `hint_requested`, `attempt_number`, `confidence` |
 | **Hidden state** | Learned / Not Learned (binary, BKT), surfaced as: Mastery (P(L) ≥ 0.85), Uncertain/Partial (0.40–0.84), Knowledge Gap (≤ 0.40) |
-| **Belief** | P(Lₜ) — probability the student has learned the skill, starting from a global prior (P(L₀) = 0.591, learned from `skill_builder_data.csv` via `prior_prob_cal.py`) and updated with every new response |
-| **Action** | **Answer** (give the answer / move on) · **Ask** (probe further before trusting the belief) · **Hint** (scaffold) · **Teach Prior** (drop back to a prerequisite concept) |
-| **Cost** | Answering when the true state is a Knowledge Gap wastes a teaching moment the student needed. Asking a student who has clearly mastered a skill wastes time and risks frustration. Trusting a correct-but-low-confidence answer as mastery risks reinforcing a guess instead of catching it. |
+| **Belief** | P(Lₜ) — probability the student has learned the skill global prior (P(L₀) = 0.591, learned from `skill_builder_data.csv` via `prior_prob_cal.py`) and updated with every new response |
+| **Action** | **Answer**, **Ask**, **Hint**, · **Teach Prior** |
 | **Policy** | If P(Lₜ) ≥ 0.85 and correct and confidence = HIGH → Answer. If P(Lₜ) ≥ 0.85 but confidence = LOW or the item was missed → Ask. If 0.40 ≤ P(Lₜ) < 0.85 → Hint. If P(Lₜ) < 0.40 → Teach Prior. |
-| **Feedback** | Each (belief, action, next-response outcome) triple can be used to re-estimate per-skill P(guess)/P(slip) instead of relying on one global prior forever — see `probability-decision-record.md` for a worked three-step example. |
+| **Feedback** | Each (belief, action, next-response outcome) triple can be used to re-estimate per-skill P(guess)/P(slip) instead of relying on one global prior forever, see `probability-decision-record.md` for a worked three-step example. |
 
 - **Practitioner Insight:** Inspired by a Reddit discussion (`discussion-record.md`), noting that learners admit uncertainty more readily to an AI, the system adds self-reported confidence to catch lucky guesses.
     
