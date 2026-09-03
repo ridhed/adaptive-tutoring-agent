@@ -1,23 +1,24 @@
 # 1. Technical Terms and What does it mean
 
-| Term                                                     | What it means                                                                                                                                               |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Intelligent Tutoring System (ITS)**                    | The field of AI systems that provide personalized instruction.                                                                                              |
-| **Student Modeling / Learner Modeling**                  | The process of inferring what a student knows from their behavior. This is your core task.                                                                  |
-| **Bayesian Knowledge Tracing (BKT)**                     | A classic algorithm that models each concept as having a hidden binary state: `Learned` or `Not Learned`. It updates beliefs based on correctness evidence. |
-| **Deep Knowledge Tracing (DKT)**                         | A neural-network version of BKT that uses a continuous hidden state instead of a binary one.                                                                |
-| **Partially Observable Markov Decision Process (POMDP)** | The formal framework for decision-making when the true state (student knowledge) is hidden and must be inferred from observations.                          |
-| **Hidden State / Latent State**                          | The true student knowledge that you cannot observe directly. You only see evidence (responses).                                                             |
-| **Evidence / Observation**                               | The observable signals you use to infer the hidden state: correctness, response time, hint requests, etc.                                                   |
-| **Action Space / Policy**                                | The set of actions your agent can choose from (`answer`, `ask`, `hint`, `teach`) and the rule for choosing among them.                                      |
-| **Exploration-Exploitation Tradeoff**                    | The dilemma of choosing an action to gain information (exploration) versus choosing an action to maximize immediate learning (exploitation).                |
-| **Cold-Start Problem**                                   | The challenge of making decisions when you have no prior data about a new student.                                                                          |
-| **Diagnostic Assessment**                                | A short initial phase designed to reduce uncertainty about the student's knowledge before full instruction begins.                                          |
-| **Computerized Adaptive Testing (CAT)**                  | A system that selects the next question based on the student's previous answers to efficiently estimate ability.                                            |
-| **Item Response Theory (IRT)**                           | A statistical framework for modeling the probability of a correct response as a function of student ability and item difficulty.                            |
-| **Zone of Proximal Development (ZPD)**                   | The pedagogical principle that learning is optimal when tasks are slightly above the student's current level.                                               |
-| **Scaffolding**                                          | Providing support (hints, worked examples) that is gradually removed as the student masters the concept.                                                    |
-| **Misconception Detection**                              | Identifying specific incorrect beliefs a student holds, as opposed to simply marking an answer wrong.                                                       |
+| Term                                    | What does it mean                                                                              |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Intelligent Tutoring System (ITS)**   | AI systems that provide personalized instruction to learners.                                       |
+| **Student / Learner Modeling**          | Inferring what a student knows from their observable behavior.                                      |
+| **Bayesian Knowledge Tracing (BKT)**    | A probabilistic model that estimates whether a student has learned a concept from their responses.  |
+| **Deep Knowledge Tracing (DKT)**        | A neural-network approach that models how student knowledge changes over time.                      |
+| **POMDP**                               | A framework for making decisions when the true state is hidden and only observations are available. |
+| **Hidden / Latent State**               | The student’s actual knowledge that cannot be directly observed.                                    |
+| **Evidence / Observation**              | Observable signals, such as correctness, response time, or hint requests, used to infer knowledge.  |
+| **Action Space / Policy**               | The possible actions an agent can take and the strategy for choosing among them.                    |
+| **Exploration–Exploitation Tradeoff**   | Balancing information gathering with actions that maximize immediate learning.                      |
+| **Cold-Start Problem**                  | Making decisions about a student when little or no prior information is available.                  |
+| **Diagnostic Assessment**               | An initial assessment used to determine what a student knows and does not know.                     |
+| **Computerized Adaptive Testing (CAT)** | A testing system that selects questions based on previous responses.                                |
+| **Item Response Theory (IRT)**          | A model relating the probability of a correct answer to student ability and item difficulty.        |
+| **Zone of Proximal Development (ZPD)**  | The range of tasks a learner can accomplish with appropriate support.                               |
+| **Scaffolding**                         | Providing temporary support that is gradually reduced as the learner improves.                      |
+| **Misconception Detection**             | Identifying incorrect underlying beliefs rather than simply identifying wrong answers.              |
+
 # 2. Useful Search Queries
 
 **For the core problem:**
