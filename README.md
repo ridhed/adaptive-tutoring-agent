@@ -8,7 +8,7 @@
     
 - **The Hidden Challenge:** True student mastery or understanding of a concept is latent and must be inferred from behavior on every single question.
     
-- **Dataset:** Built iteratively using student-response data (`skill_builder_data.csv`) from the [SciDB Assistments Student Learning Records Dataset](https://www.scidb.cn/en/detail?dataSetId=b1c3986fc96d435e8b258a9b5c36cd7c).
+- **Dataset:** Student-response data (`skill_builder_data.csv`) from the [SciDB Assistments Student Learning Records Dataset](https://www.scidb.cn/en/detail?dataSetId=b1c3986fc96d435e8b258a9b5c36cd7c).
   
 ## 2. Problem statement
 
