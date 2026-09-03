@@ -1,6 +1,6 @@
 # 1. Technical Terms and What does it mean
 
-| Term                                    | One-line definition                                                                                 |
+| Term                                    | What does it mean                                                                              |
 | --------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | **Intelligent Tutoring System (ITS)**   | AI systems that provide personalized instruction to learners.                                       |
 | **Student / Learner Modeling**          | Inferring what a student knows from their observable behavior.                                      |
