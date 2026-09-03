@@ -16,20 +16,21 @@
 
 ## 3. Decision-making architectures (versions)
 
-| Version                 | Architecture                                          | What it adds                                                                                                                                                                                                                                            |
-| ----------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **V0**                  | Expert System (if/elif rule)                    | A fixed decision table mapping (correctness, attempt number, response time) → hidden state → action. No memory across questions, no probabilities.                                                                                                      |
-| **V1**                  | Bayesian Knowledge Tracing (BKT)                      | Replaces hard-coded rules with a probability P(Learned) that updates after every response using Bayes' rule, plus a self-reported confidence signal (added after Reddit feedback — see `discussion-record.md`). |
+| Version | Architecture  | What it adds                                                                             |
+| ------- | ------------- | ---------------------------------------------------------------------------------------- |
+| **V0**  | Expert System | Fixed rules mapping responses → state → action; no memory or probabilities.              |
+| **V1**  | BKT           | Tracks **P(Learned)** and updates it after each response, with self-reported confidence. |
+
 
 ## 4. Evidence the agent uses (per interaction)
 
-| Signal | Question it answers | Introduced in |
-|---|---|---|
-| **Correctness** | Did they get it right? | V0 |
-| **Response time** (discretized FAST/SLOW vs. expected time) | Did they seem to rush (careless) or struggle (knowledge gap)? | V0 |
-| **Attempt number** | Is this a first try, or have they already tried and failed on this item? | V0 |
-| **Hint requests** | Did they need scaffolding to get here? | V1 |
-| **Self-reported confidence** (HIGH/MEDIUM/LOW) | Do they *believe* they know it, independent of whether they're right? | V1, added after Reddit feedback |
+| Inputs             | Terminology   | Question it answers                  | Introduced in |
+| ------------------ | ------------- | ------------------------------------ | ------------- |
+| **Correctness**    | Performance   | Did they get it right?               | V0            |
+| **Response time**  | Latency       | Did they rush or struggle?           | V0            |
+| **Attempt number** | Persistence   | Is this a first or repeated attempt? | V0            |
+| **Hint requests**  | Scaffolding   | Did they need help?                  | V1            |
+| **Confidence**     | Metacognition | Do they believe they know it?        | V1            |
 
 ## 5. Agent design (V1 - current)
 
@@ -49,17 +50,38 @@
 
 ## 6. Project files
 
-| File | Purpose |
-|---|---|
-| `Adaptive Tutoring Agent/V0/V0 - Expert System.md` / `Adaptive Tutoring Agent/V0/V0_agent.py` | Rule-based baseline: decision table and implementation |
-| `Adaptive Tutoring Agent/V1/V1 - Bayesian Knowledge Tracing.md` / `Adaptive Tutoring Agent/V1/V1_agent.py` | Probabilistic belief-updating version and implementation |
-| `Adaptive Tutoring Agent/V1/experiments.json` | Four reproducible V1 test scenarios and their expected outputs |
-| `probability-decision-record.md` | Worked, step-by-step Bayesian update example across several interactions |
-| `discussion-record.md` | Reddit contributions, discussion outcomes, and resulting design changes |
-| `research-file.md` | Glossary of terms, search queries, and relevant communities used while researching this problem |
-| `linkedin-posts.md` | Published LinkedIn posts and their links |
-| `design/pdfs/v0-1.png` / `design/pdfs/v1-1.png` | Rendered workflow visuals for V0 and V1 |
-| `Research Papers/` | Source papers on knowledge tracing, educational assessment, and intelligent tutoring systems |
+Adaptive-Tutoring-Agent/
+│
+├── README.md
+│
+├── data/
+│   └── skill_builder_data.csv
+│
+├── V0/
+│   ├── V0 - Expert System.md
+│   └── V0_agent.py
+│
+├── V1/
+│   ├── V1 - Bayesian Knowledge Tracing.md
+│   ├── V1_agent.py
+│   └── experiments.json
+│
+├── research/
+│   ├── research-file.md
+│   ├── discussion-record.md
+│   └── Research Papers/
+│
+├── analysis/
+│   ├── probability-decision-record.md
+│   └── prior_prob_cal.py
+│
+├── design/
+│   └── pdfs/
+│       ├── v0-1.png
+│       └── v1-1.png
+│
+└── documentation/
+    └── linkedin-posts.md
 
 ## 7. What's next
 - Incorporate hint-request count into the V1 policy table (currently collected as an input but not yet used in the decision rule).
