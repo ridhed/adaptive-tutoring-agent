@@ -34,14 +34,14 @@
 
 ## 5. Agent design (V1 - current)
 
-| Part | Definition |
+| Features | How it is used in the workflow |
 |---|---|
 | **Input** | `student_id`, `problem_id`, `kc_id` (skill), `correct`, `time_seconds`, `hint_requested`, `attempt_number`, `confidence` |
-| **Hidden state** | Learned / Not Learned (binary, BKT), surfaced as: Mastery (P(L) ≥ 0.85), Uncertain/Partial (0.40–0.84), Knowledge Gap (≤ 0.40) |
-| **Belief** | P(Lₜ) — probability the student has learned the skill global prior (P(L₀) = 0.591, learned from `skill_builder_data.csv` via `prior_prob_cal.py`) and updated with every new response |
-| **Action** | **Answer**, **Ask**, **Hint**, · **Teach Prior** |
-| **Policy** | If P(Lₜ) ≥ 0.85 and correct and confidence = HIGH → Answer. If P(Lₜ) ≥ 0.85 but confidence = LOW or the item was missed → Ask. If 0.40 ≤ P(Lₜ) < 0.85 → Hint. If P(Lₜ) < 0.40 → Teach Prior. |
-| **Feedback** | Each (belief, action, next-response outcome) triple can be used to re-estimate per-skill P(guess)/P(slip) instead of relying on one global prior forever, see `probability-decision-record.md` for a worked three-step example. |
+| **Hidden state** | Learned / Not Learned (binary, BKT), Mastery (P(L) ≥ 0.85), Uncertain (0.40–0.84), Knowledge Gap (≤ 0.40) |
+| **Belief** | P(Lₜ) = probability the student has learned the skill global prior, (P(L₀) = 0.591, learned from `skill_builder_data.csv` via `prior_prob_cal.py`) and updated with every new response |
+| **Action** | **Answer**, **Ask**, **Hint**, **Teach Prior** |
+| **Policy** | [P(Lₜ) ≥ 0.85 = Answer], [P(Lₜ) ≥ 0.85 = Ask], [0.40 ≤ P(Lₜ) < 0.85= Hint], [P(Lₜ) < 0.40 → Teach Prior.] |
+| **Feedback** | Each (belief, action, next-response outcome) used to re-estimate per-skill P(guess)/P(slip) instead of relying on one prior probability. |
 
 - **Practitioner Insight:** Inspired by a Reddit discussion (`discussion-record.md`), noting that learners admit uncertainty more readily to an AI, the system adds self-reported confidence to catch lucky guesses.
     
@@ -50,38 +50,26 @@
 ## 6. Project Files
 
 ```text
-Adaptive-Tutoring-Agent/
-│
+adaptive-tutoring-agent/
+├── .git/
 ├── README.md
-│
-├── data/
-│   └── skill_builder_data.csv
-│
+├── analysis/
+│   ├── prior_prob_cal.py
+│   └── probability-decision-record.md
+├── design/
+├── research/
+│   ├── research-file.md
+│   └── Research Papers/
+├── socials/
+│   ├── discussion-record.md
+│   └── linkedin-posts.md
 ├── V0/
 │   ├── V0 - Expert System.md
 │   └── V0_agent.py
-│
-├── V1/
-│   ├── V1 - Bayesian Knowledge Tracing.md
-│   ├── V1_agent.py
-│   └── experiments.json
-│
-├── research/
-│   ├── research-file.md
-│   ├── discussion-record.md
-│   └── Research Papers/
-│
-├── analysis/
-│   ├── probability-decision-record.md
-│   └── prior_prob_cal.py
-│
-├── design/
-│   └── pdfs/
-│       ├── v0-1.png
-│       └── v1-1.png
-│
-└── documentation/
-    └── linkedin-posts.md
+└── V1/
+    ├── experiments.json
+    ├── V1 -  Bayesian Knowledge Tracing.md
+    └── V1_agent.py
 ```
 
 ## 7. What's next
