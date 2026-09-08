@@ -16,10 +16,11 @@
 
 ## 3. Decision-making architectures (versions)
 
-| Version | Architecture  | What it adds                                                                             |
-| ------- | ------------- | ---------------------------------------------------------------------------------------- |
-| **V0**  | Expert System | Fixed rules mapping responses → state → action; no memory or probabilities.              |
-| **V1**  | BKT           | Tracks **P(Learned)** and updates it after each response, with self-reported confidence. |
+| Version | Architecture  | What it adds |
+| ------- | ------------- | ------------ |
+| **V0** | Expert System | Fixed rules mapping responses → state → action; no memory or probabilities. |
+| **V0.1** | Evidence-Based Expert System | Adds error-pattern analysis from mistake history and knowledge-component performance to distinguish possible carelessness, execution errors, and conceptual difficulty. |
+| **V1** | BKT | Tracks **P(Learned)** and updates it after each response, with self-reported confidence. |
 
 
 ## 4. Evidence the agent uses (per interaction)
@@ -29,7 +30,7 @@
 | **Correctness**    | Performance   | Did they get it right?               | V0            |
 | **Response time**  | Latency       | Did they rush or struggle?           | V0            |
 | **Attempt number** | Persistence   | Is this a first or repeated attempt? | V0            |
-| **Hint requests**  | Scaffolding   | Did they need help?                  | V1            |
+| **Hint requests**  | Scaffolding   | Did they need help?                  | V0.1          |
 | **Confidence**     | Metacognition | Do they believe they know it?        | V1            |
 
 ## 5. Project Files
@@ -50,6 +51,7 @@ adaptive-tutoring-agent/
 │   └── linkedin-posts.md
 ├── V0/
 │   ├── V0 - Expert System.md
+│   ├── V0.1 - Expert System 1.md
 │   └── V0_agent.py
 └── V1/
     ├── experiments.json
@@ -58,5 +60,6 @@ adaptive-tutoring-agent/
 ```
 
 ## 7. What's next
+- Build an evaluation framework that tests the agent on unseen cases and records where the decision logic fails.
 - Incorporate hint-request count into the V1 policy table (currently collected as an input but not yet used in the decision rule).
 - Move from a single global prior to per-skill, and eventually per-student, priors as more interaction data accumulates.
