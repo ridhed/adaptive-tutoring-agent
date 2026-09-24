@@ -4,6 +4,9 @@
 **Inputs:**
 - `student_id`, `problem_id`, `kc_id`, `correct`, `time_seconds`, `hint_requested`, `attempt_number`
 - `confidence` $\in$ {HIGH, MEDIUM, LOW}  [5] 
+    High Confidence: time_seconds < expected_time AND attempt_number == 1 AND hint_count == 0
+    Low Confidence: time_seconds > expected_time * 1.5 OR attempt_number > 1 OR hint_count > 0
+ 
 
 **Prior Probability (Learned from Dataset) [1], [3] :**
 - $P(L_0)$ (Initial Knowledge) = 0.591
@@ -88,14 +91,17 @@ The hidden state represents the student's true knowledge, which cannot be observ
   
 **Action Space:** {`ASK`, `HINT`, `TEACH_PRIOR`, `ANSWER`}.
 
-# 4. Decision Table (Probability & Confidence Driven)
+# 4. Decision Table (Probability & Confidence )
 
-|**Posterior P(Lt​)**|**Correctness**|**Confidence**|**Inferred State**|**Action**|
-|---|---|---|---|---|
-|$\ge 0.85$|True|High|Mastery|ANSWER|
-|$\ge 0.85$|True|Low|Guessing|ASK|
-|$0.40 - 0.84$|Any|Any|Uncertain|HINT|
-|$\le 0.40$|False|Any|Knowledge Gap|TEACH_PRIOR|
+| **Posterior $P(L_t)$** | **Correctness** | **Confidence** | **Inferred State** | **Action** | **Pedagogical Note** |
+| --- | --- | --- | --- | --- | --- |
+| $\ge 0.85$ | True | High / Med | Mastery | `ANSWER` | Standard confirmation & progression. |
+| $\ge 0.85$ | True | Low | Hesitant Success | `ASK` | Probes for explanation to solidify understanding. |
+| $\ge 0.85$ | False | Any | Careless Slip | `ASK` | High-mastery student made a slip; probes before re-teaching. |
+| $0.40 - 0.84$ | Any | Any | Uncertain / ZPD | `HINT` | Scaffolds learning during active practice. |
+| $\le 0.40$ | False | Any | Knowledge Gap | `TEACH_PRIOR` | Clear deficit; foundational review needed. |
+| $\le 0.40$ | True | Any | Lucky Guess | `ASK` | Low-knowledge student answered correctly; requires validation. |
+
 # 5. Architechture
 <img width="723" height="812" alt="V1" src="https://github.com/user-attachments/assets/c55e124a-b63b-43bf-9d23-ac5c8deb0169" />
 
