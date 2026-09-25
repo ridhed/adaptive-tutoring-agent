@@ -1,0 +1,295 @@
+\documentclass[10pt,letterpaper,twocolumn]{article}
+\usepackage[top=0.75in,bottom=0.9in,left=0.65in,right=0.65in,columnsep=0.25in]{geometry}
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
+\captionsetup{font=footnotesize,labelfont=bf,skip=4pt}
+\setlength{\parindent}{1em}
+\setlength{\parskip}{0pt}
+\setlength{\columnsep}{0.25in}
+\setlist[enumerate]{leftmargin=1.2em,itemsep=1pt,topsep=2pt}
+\titleformat{\section}{\normalsize\bfseries\centering}{\thesection.}{0.5em}{\MakeUppercase}
+\titleformat{\subsection}{\normalsize\itshape}{\thesubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{9pt}{4pt}
+\titlespacing*{\subsection}{0pt}{5pt}{2pt}
+\renewcommand{\thesection}{\Roman{section}}
+\renewcommand{\thesubsection}{\Alph{subsection}}
+\makeatletter
+\renewcommand\@seccntformat[1]{\csname the#1\endcsname.\hspace{0.5em}}
+\makeatother
+
+\title{\vspace{-1.2em}\Large\bfseries A Probabilistic Action-Selection Framework for Adaptive Tutoring Agents Under Student-State Uncertainty}
+\author{\normalsize Riddhi Jayant Hedaoo\\
+\small ORCID: \href{https://orcid.org/0009-0001-9440-721X}{0009-0001-9440-721X}\\
+\small \texttt{hedaooriddhi@gmail.com}}
+\date{}
+
+\begin{document}
+\twocolumn[
+\begin{@twocolumnfalse}
+\maketitle
+\begin{abstract}
+An adaptive tutoring agent must decide, after each student response, whether to ASK a follow-up question, give a HINT, TEACH a prerequisite, or ANSWER. Rule-based expert systems make this choice from fixed thresholds on the current response and on history, but they report a single state with no confidence attached, so a wrong state produces a confident wrong action. We model the student as a hidden state with four values (mastery, carelessness, execution error, conceptual difficulty), place a prior over these states, update a posterior from six binary observations with a naive-Bayes likelihood, and choose the action that minimises expected pedagogical loss. When the agent is uncertain, an ASK action is evaluated by its expected information gain and its expected loss after one diagnostic item. On 5,000 simulated student responses generated from the same state model, the probabilistic agent reduces mean pedagogical loss from 0.484 (rule-based V0.1) to 0.320 and raises agreement with the oracle action from 62.5\% to 67.9\%, with Cohen's $\kappa$ rising from 0.436 to 0.532. The gain comes mostly from fewer costly under-teaching errors, not from better detection of carelessness, which remains the weakest state. Because the experiment uses simulated data with assumed parameters, these numbers show the mechanics of the framework rather than its performance on real students.
+
+\vspace{4pt}
+\noindent\textbf{Index Terms}---adaptive tutoring, probabilistic decision making, Bayesian belief update, expected loss, information gain, intelligent tutoring systems.
+\vspace{8pt}
+\end{abstract}
+\end{@twocolumnfalse}
+]
+
+\section{Introduction}
+Adaptive tutoring systems on datasets such as ASSISTments record, for each student and skill, whether an answer was correct, how long it took, how many attempts were made, and how many hints were requested. The tutor must convert that evidence into one decision. The signal is noisy: a wrong answer can come from a slip made by a student who knows the skill, from a genuine misconception, or from an unfamiliar item, and a correct answer can come from a lucky guess. A single wrong answer does not tell the tutor which of these happened.
+
+Our earlier rule-based agents (V0, V0.1) map the observation directly to a named state and an action through if/elif thresholds. They are transparent and easy to audit, but they have two weaknesses. First, they discard uncertainty: the output is a hard label, so the agent cannot distinguish a case it is sure about from one it barely decided. Second, the thresholds are chosen by hand and treat every error as equally costly, although asking a student a question they already know wastes time while teaching a prerequisite they do not need costs more.
+
+Asking a language model to choose the next tutoring move is not a substitute. A model given the same transcript produces a fluent answer with no stated probability, cannot be audited against the evidence it used, and cannot be told that a mistaken ANSWER costs more than an unnecessary ASK. The agent needs an explicit belief over hidden student states, a way to update that belief as evidence arrives, a decision rule that reflects the costs of each mistake, and a way to choose between actions that gather information and actions that intervene. This paper describes such a framework and tests it against the rule-based baselines on simulated data.
+
+\section{Related Work}
+Our starting point is the evidence-based expert system in our V0.1 design, which draws on knowledge tracing \cite{corbett1995} and the structure of educational assessments \cite{mislevy2003}. The error taxonomy (carelessness, execution error, conceptual difficulty) and the discretisation of response time follow that design. The move from rules to beliefs is motivated by the knowledge-tracing literature, which models learning as a probabilistic process, and by the assessment-design framework, which treats observations as evidence about latent proficiency. We also considered work on carelessness in intelligent tutors \cite{sanpedro2014}, which motivated keeping carelessness as a separate hidden state rather than folding it into error. Reddig et al.\ \cite{reddig2025} discuss in-context feedback generation for intelligent tutors with language models; we do not adopt their method and cite it only as context for the language-model alternative discussed in the introduction.
+
+\section{Baseline Systems}
+The two rule-based baselines are shown in Fig.~\ref{fig:v0} and Fig.~\ref{fig:v01}. V0 (Fig.~\ref{fig:v0}) uses three inputs, correctness, attempt number and response time, and returns one of four actions. V0.1 (Fig.~\ref{fig:v01}) adds hint count, KC success history and mistake history, and discretises response time against the expected time for the skill.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.86\columnwidth]{v0.png}
+\caption{V0 expert system: workflow (top) and if/else policy (bottom).}
+\label{fig:v0}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{v0_1.png}
+\caption{V0.1 evidence-based expert system: pipeline (left) and decision-tree policy (right).}
+\label{fig:v01}
+\end{figure*}
+
+\section{Probabilistic View}
+\subsection{Hidden States}
+The hidden state $S$ takes one of four values: mastery, carelessness, execution\_error, and conceptual\_difficulty. Each state is a reason for the observed response, and each has a natural pedagogical action: mastery $\rightarrow$ ANSWER, carelessness $\rightarrow$ ASK, execution\_error $\rightarrow$ HINT, conceptual\_difficulty $\rightarrow$ TEACH\_PRIOR. We treat this mapping as the oracle used for evaluation.
+
+\subsection{Priors}
+The prior $P(S)$ is $(0.35, 0.15, 0.15, 0.35)$ for the four states in the order above. These values are assumptions. They make mastery and conceptual difficulty the common cases, matching the intuition that a skill is either learned or not, with carelessness and execution error as less common explanations for a wrong answer. We did not estimate them from data.
+
+\subsection{Evidence}
+Six binary observations are used, each derived from the same fields as V0.1: $C$ (correct), $F$ (response is FAST, i.e.\ time $<0.3\times$ expected time), $A$ (attempt number $>1$), $H$ (hint count $>0$), $K$ (prior KC success $\geq 1$), and $M$ (mistake history $\geq 2$).
+
+\subsection{Likelihoods and Posterior}
+Each observation is conditionally independent given the state (a naive-Bayes assumption), so $P(e \mid S) = \prod_i P(e_i \mid S)$. Table~\ref{tab:lik} gives the likelihood parameters used by the agent, and the posterior is
+\begin{equation}
+P(S \mid e) = \frac{P(S)\prod_i P(e_i \mid S)}{\sum_{s} P(s)\prod_i P(e_i \mid s)}.
+\end{equation}
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Assumed likelihoods $P(\text{feature}=1 \mid S)$ used by the agent. Not measured from data.}
+\label{tab:lik}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Feature & Mastery & Careless & Exec. & Conc. \\
+\midrule
+$C$ (correct) & 0.95 & 0.80 & 0.55 & 0.20 \\
+$F$ (fast) & 0.50 & 0.80 & 0.20 & 0.35 \\
+$A$ (attempt $>1$) & 0.05 & 0.10 & 0.20 & 0.50 \\
+$H$ (hint used) & 0.05 & 0.05 & 0.10 & 0.40 \\
+$K$ (prior success) & 0.90 & 0.85 & 0.75 & 0.40 \\
+$M$ (repeat mistakes) & 0.05 & 0.15 & 0.30 & 0.70 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Worked Update}
+Consider a student who answers correctly, responds slowly, on a first attempt, without a hint, with prior success in the skill, and with no repeated mistakes. The unnormalised scores are
+\begin{align*}
+\text{mastery:}\ & 0.35\times0.95\times0.50\times0.95\times0.95 \\
+& \quad\times0.90\times0.95 \approx 0.128\\
+\text{careless:}\ & 0.15\times0.80\times0.20\times0.90\times0.95 \\
+& \quad\times0.85\times0.85 \approx 0.015\\
+\text{exec.:}\ & 0.15\times0.55\times0.80\times0.80\times0.90 \\
+& \quad\times0.75\times0.70 \approx 0.025\\
+\text{conc.:}\ & 0.35\times0.20\times0.65\times0.50\times0.60 \\
+& \quad\times0.40\times0.30 \approx 0.002
+\end{align*}
+which normalise (dividing by their sum, 0.170) to $P(S\mid e) = (0.753, 0.088, 0.147, 0.012)$. The values in Table~\ref{tab:evidence} for the same pattern differ slightly because they use the agent's perturbed parameters.
+
+\subsection{Threshold}
+For a two-way choice between ANSWER and TEACH\_PRIOR, with loss $L_{\text{ans}}=3.0$ when the student is conceptually confused and $L_{\text{teach}}=1.2$ when the student had mastery, ANSWER has lower expected loss when
+\begin{equation}
+P(\text{mastery}\mid e) \geq \frac{L_{\text{ans}}}{L_{\text{ans}}+L_{\text{teach}}} = \frac{3.0}{4.2} \approx 0.714.
+\end{equation}
+
+\section{Information-Theoretic View}
+We use two quantities.
+
+\textbf{Entropy.} The entropy of the posterior, $H(S\mid e) = -\sum_s P(s\mid e)\log_2 P(s\mid e)$, measures uncertainty in bits. A posterior concentrated on one state has entropy near 0; a uniform posterior over four states has entropy 2 bits. Across the simulated students the mean posterior entropy before any action is 1.06 bits.
+
+\textbf{Information gain.} For a candidate diagnostic item with outcome $d$, the expected reduction in entropy is $IG = H(S\mid e) - \mathbb{E}_d[H(S\mid e,d)]$. In the simulation, the diagnostic item is a fresh question whose correctness depends on the state through the same $P(C\mid S)$. The mean information gain of one probe is 0.115 bits, small relative to 1.06 bits of uncertainty. A single extra item rarely changes the belief much, so asking is seldom the best move.
+
+\section{Information Selection}
+Each action is scored by its expected loss under the posterior. ANSWER, HINT, and TEACH\_PRIOR use the loss matrix directly. ASK gathers evidence rather than intervening, so its expected loss is the cost of asking plus the expected loss after observing one probe outcome,
+\[
+\mathcal{L}(\text{ASK}) = c_{\text{ask}} + \sum_d P(d\mid e)\,\min_a \mathbb{E}[L(a,S)\mid e,d].
+\]
+Table~\ref{tab:evidence} shows two cases that illustrate the choice.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Evidence comparison for two observation patterns. ASK includes the probe and its cost $c_{\text{ask}}=0.5$.}
+\label{tab:evidence}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+ & Case 1: correct, slow & Case 2: wrong, fast \\
+\midrule
+$P$(mastery) & 0.753 & 0.225 \\
+$P$(careless) & 0.114 & 0.486 \\
+$P$(exec.) & 0.128 & 0.175 \\
+$P$(conc.) & 0.005 & 0.115 \\
+Loss: ANSWER & \textbf{0.256} & 1.004 \\
+Loss: ASK & 0.714 & \textbf{0.757} \\
+Loss: HINT & 0.646 & 0.757 \\
+Loss: TEACH\_PRIOR & 1.146 & 0.930 \\
+Info. gain (bits) & 0.110 & 0.208 \\
+\textbf{Chosen action} & ANSWER & ASK \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+In Case 2, ASK and HINT tie at 0.757 to three decimals, so the choice between them is fragile: a small change in the assumed costs would flip it. We report this rather than hide it.
+
+\section{Decision Policy}\label{sec:policy}
+\textbf{Action set:} \{ANSWER, ASK, HINT, TEACH\_PRIOR\}.
+
+\textbf{Loss matrix.} Rows are actions and columns are true states (mastery, carelessness, execution, conceptual). These costs are assumptions chosen to encode pedagogical intent: ANSWER to a conceptually confused student is the costliest error (3.0); TEACH\_PRIOR to a student who has mastered the skill wastes time (1.2); ASK carries a small base cost of 0.5.
+\[
+L=\begin{bmatrix}
+0.0 & 1.0 & 1.0 & 3.0\\
+0.5 & 0.0 & 0.5 & 0.5\\
+0.7 & 1.0 & 0.0 & 1.0\\
+1.2 & 1.0 & 1.0 & 0.0
+\end{bmatrix}
+\]
+
+\textbf{Rule.} Compute $\mathbb{E}[L(a,S)\mid e]$ for each action, replacing the ASK entry with $\mathcal{L}(\text{ASK})$, and pick the minimum.
+
+\textbf{Escalation.} If the posterior on any single state exceeds 0.9, the agent acts on that state without probing, guarding against the case where probe cost exceeds the value of information.
+
+\textbf{Stop condition.} The agent probes at most once per turn, so a student is not interrogated repeatedly.
+
+\section{Experiment}\label{sec:exp}
+\textbf{Data.} The raw ASSISTments file was not available when this draft was produced, so we ran a simulation. Each of $N=5{,}000$ students was assigned a hidden state from the prior, and the six observations were drawn from a generative model whose parameters are the true values. The agent's likelihood tables are those values perturbed by independent Gaussian noise with standard deviation 0.05 (clipped to $[0.01,0.99]$), so the agent operates with imperfect knowledge of the generator. Random seed 42; perturbation seed 7.
+
+\textbf{Baselines.} V0 and V0.1, as shown in Fig.~\ref{fig:v0} and Fig.~\ref{fig:v01}.
+
+\textbf{Metrics.} Agreement with the oracle action (accuracy), Cohen's $\kappa$, mean pedagogical loss under $L$, and the rate at which each agent chooses ASK.
+
+\textbf{Oracle.} The oracle action is the action for the true hidden state. Because the oracle is defined from the same states the simulation uses, it is an idealisation rather than a pedagogical ground truth.
+
+\section{Results}
+Table~\ref{tab:res} reports the main comparison and Fig.~\ref{fig:res} plots accuracy and mean loss.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Main comparison on $N=5{,}000$ simulated students (seed 42).}
+\label{tab:res}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Agent & Acc. & $\kappa$ & Mean loss & ASK rate \\
+\midrule
+V0 & 45.2\% & 0.228 & 0.481 & 31.8\% \\
+V0.1 & 62.5\% & 0.436 & 0.484 & 5.9\% \\
+Prob.\ + info.\ sel. & \textbf{67.9\%} & \textbf{0.532} & \textbf{0.320} & 5.2\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_results.pdf}
+\caption{Accuracy (left) and mean pedagogical loss (right) for the three agents.}
+\label{fig:res}
+\end{figure}
+
+The probabilistic agent has the lowest mean loss and the highest accuracy. V0.1 is more accurate than V0 because it uses history, but it answers so often that its errors on conceptual students are costly; the probabilistic agent gains most on those cases.
+
+Table~\ref{tab:state} breaks accuracy down by true state. The probabilistic agent recognises conceptual difficulty better than V0.1 (0.857 vs 0.732), while V0.1 is better on mastery (0.943 vs 0.851). Carelessness is almost never correctly recognised by either agent.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Accuracy by true hidden state.}
+\label{tab:state}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+True state & Prob.\ agent & V0.1 & Share \\
+\midrule
+Mastery & 0.851 & 0.943 & 35\% \\
+Carelessness & 0.161 & 0.111 & 15\% \\
+Execution error & 0.364 & 0.117 & 15\% \\
+Conceptual difficulty & 0.857 & 0.732 & 35\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Failure Analysis}
+The probabilistic agent's most frequent disagreements with the oracle are the following.
+\begin{enumerate}
+\item \textbf{Carelessness read as mastery (ASK$\rightarrow$ANSWER, 455 cases).} A fast, correct answer from a student with a slip in a known skill is scored as mastery. \emph{Change:} the probe path exists, but mean information gain (0.115 bits) is too small for ASK to win often. \emph{Residual:} carelessness is still poorly detected.
+\item \textbf{Mastery given HINT (ANSWER$\rightarrow$HINT, 155 cases).} Slow correct answers are read as execution problems. \emph{Change:} none in this iteration. \emph{Residual:} response time is a weak signal alone.
+\item \textbf{Execution error read as conceptual (HINT$\rightarrow$TEACH\_PRIOR, 197 cases).} Repeated attempts or hints shift the posterior toward conceptual difficulty. \emph{Change:} none in this iteration.
+\item \textbf{Conceptual difficulty given HINT (TEACH\_PRIOR$\rightarrow$HINT, 167 cases).} A single strong signal is not enough when other evidence is mixed. \emph{Residual:} the naive-Bayes assumption double-counts correlated signals such as hints and repeated attempts.
+\item \textbf{Hard item answered correctly (HINT$\rightarrow$ANSWER, 230 cases).} A correct answer on a hint-requiring item is read as mastery. \emph{Residual:} correctness dominates the update.
+\end{enumerate}
+
+Two failures deserve emphasis. The naive-Bayes update treats correlated signals as independent, which overstates confidence when hints and repeated attempts co-occur. The ASK choice is sensitive to the cost $c_{\text{ask}}$ and to a probe that gives little information, so the agent rarely asks in practice.
+
+\section{Human Discussion}
+[To complete: record what teachers, tutors, or peers said about the design and whether it changed the loss matrix, action set, or hidden states. No such discussion is reflected in this draft.]
+
+\section{Limitations}
+\textbf{Data.} The experiment uses simulated students only. No real ASSISTments records were used, so no claim is made about real student performance.
+
+\textbf{Simulation.} The generator and the oracle share the same four hidden states and the same state-to-action mapping, which makes the oracle an idealisation. The agent's likelihoods are the generator's parameters with noise, which is more favourable than a real deployment where mismatch may be larger.
+
+\textbf{Assumed probabilities.} The priors, all likelihood values in Table~\ref{tab:lik}, and the state-to-action mapping are assumptions, not estimates from student data.
+
+\textbf{Assumed costs.} The loss matrix and the ASK cost ($c_{\text{ask}}=0.5$) are judgement calls. The ASK$\leftrightarrow$HINT tie in Table~\ref{tab:evidence} depends on them, so the policy may change if the costs change.
+
+\textbf{Missing hidden states.} At least three states may be missing: disengagement (guessing or gaming), fatigue, and knowing the skill but not the item format. The current model cannot represent these, so they are absorbed into the four states in ways we have not measured.
+
+\textbf{Generalisation.} The design assumes the six observations are available at every step and that KC labels are accurate. It would not generalise to tutors with no timing data, to skills with very different item formats, or to populations whose response-time distribution differs from the one used to set the FAST/SLOW threshold.
+
+\textbf{Human oversight.} A human must review the loss matrix and priors, check which state labels are pedagogically meaningful, and monitor the tutor's actions on real students. A probabilistic agent can be confidently wrong, and the posterior does not correct that by itself.
+
+\section{New Questions}
+\begin{itemize}[leftmargin=1.2em]
+\item Carelessness was the weakest state (16\% recall) even though a probe exists. Can an agent learn which evidence is valuable without being told the likelihoods, and would that recover the carelessness signal?
+\item Case 2 shows ASK and HINT tied at three decimals. Should costs be learned from teacher decisions, and would the ASK-versus-HINT choice be stable under that learning?
+\item One probe averaged 0.115 bits against 1.06 bits of uncertainty. Can information value be estimated from a log of historical decisions, and would a longer probe sequence change the picture?
+\item The naive-Bayes update double-counts correlated hints and repeated attempts. Should the update model that dependence explicitly, and how would an agent detect that two evidence sources reliably disagree?
+\item The threshold of 0.714 is fixed by the costs. Should it adapt per student or per skill, and what would it adapt on?
+\end{itemize}
+
+\section*{AI-Use Statement}
+Claude (Anthropic) assisted with drafting the experiment code, paper text, and LaTeX source from the author's V0 and V0.1 documents. The author must verify all numbers against their own runs, confirm the design decisions, and confirm that the references were read before submission.
+
+\begin{thebibliography}{9}
+\bibitem{corbett1995} A.~T. Corbett and J.~R. Anderson, ``Knowledge tracing: Modeling the acquisition of procedural knowledge,'' \emph{User Modeling and User-Adapted Interaction}, vol. 4, no. 4, pp. 253--278, 1995.
+\bibitem{mislevy2003} R.~J. Mislevy, L.~S. Steinberg, and R.~G. Almond, ``On the structure of educational assessments,'' \emph{Measurement: Interdisciplinary Research and Perspectives}, vol. 1, no. 1, pp. 3--62, 2003.
+\bibitem{reddig2025} J. Reddig, A. Arora, and C. MacLellan, ``Generating in-context, personalized feedback for intelligent tutors with large language models,'' \emph{Int. J. Artif. Intell. Educ.}, vol. 35, pp. 3459--3500, 2025.
+\bibitem{sanpedro2014} M.~O.~Z. San Pedro, R.~S. Baker, and M.~M.~T. Rodrigo, ``Carelessness and affect in an intelligent tutoring system for mathematics,'' 2014.
+\end{thebibliography}
+
+\end{document}

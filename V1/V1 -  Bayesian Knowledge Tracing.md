@@ -116,6 +116,7 @@ The hidden state represents the student's true knowledge, which cannot be observ
 [4] Pradhan, S., et al. (2026). _StanBKT: Rethinking Parameter Estimation in Bayesian Knowledge Tracing._ 
 
 [5] Rus, V., & Ștefănescu, D. (2016). _Non-intrusive assessment of learners' prior knowledge in dialogue-based ITS._ 
+
 # 8. What's Next
 
 - **V2 - POMDP:** Optimize long-term learning gain, not just immediate correctness.
