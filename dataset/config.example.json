@@ -1,0 +1,23 @@
+{
+  "columns": {
+    "student": "user_id",
+    "problem": "problem_id",
+    "skill": "skill_id",
+    "correct": "correct",
+    "order": "order_id",
+    "timestamp": "timestamp",
+    "response_ms": "ms_first_response",
+    "hints": "hint_count",
+    "attempt": "attempt_count"
+  },
+  "multi_skill_delimiter": null,
+  "bkt": {
+    "p_initial_know": 0.591,
+    "p_guess": 0.245,
+    "p_slip": 0.116,
+    "p_learn": 0.152,
+    "p_forget": 0.0
+  },
+  "policy": {"mastery_threshold": 0.85, "gap_threshold": 0.40, "recent_error_window": 3, "ask_errors": 2},
+  "split": {"seed": 17, "train": 0.8, "validation": 0.1, "test": 0.1}
+}
