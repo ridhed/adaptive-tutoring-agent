@@ -91,7 +91,22 @@ The hidden state represents the student's true knowledge, which cannot be observ
   
 **Action Space:** {`ASK`, `HINT`, `TEACH_PRIOR`, `ANSWER`}.
 
-# 4. Decision Table (Probability & Confidence )
+# 4. Pre-action Decision Policy
+
+The policy reads the mastery estimate **before** the current response and the prior error history for that student-skill pair. Current correctness and response time are recorded as outcomes; they must not decide the action already recommended for that interaction. The response updates BKT and the interaction history for the next decision.
+
+| Pre-action mastery | Prior history | Action | Purpose |
+| --- | --- | --- | --- |
+| $< 0.40$ | Any | `TEACH_PRIOR` | Review a likely prerequisite gap. |
+| $0.40$ to $< 0.85$ | Any | `HINT` | Give a small scaffold while mastery is uncertain. |
+| $\ge 0.85$ | At least two errors in the previous three responses | `ASK` | Check understanding after inconsistent prior performance. |
+| $\ge 0.85$ | Otherwise | `ANSWER` | Confirm/provide the response and progress. |
+
+These are policy labels, not observed ground truth. BKT alone cannot diagnose a specific misconception or prove that a recommended action improves learning. See [`../dataset/DATASET_CONSTRUCTION.md`](../dataset/DATASET_CONSTRUCTION.md) for construction and evaluation details.
+
+# 4. Earlier illustrative table (superseded)
+
+The table below is retained as historical design context only. The implemented policy is the pre-action, history-based policy above; it does not use current correctness or confidence to choose the current action.
 
 | **Posterior $P(L_t)$** | **Correctness** | **Confidence** | **Inferred State** | **Action** | **Pedagogical Note** |
 | --- | --- | --- | --- | --- | --- |

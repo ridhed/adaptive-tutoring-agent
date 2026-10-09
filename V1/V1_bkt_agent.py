@@ -13,6 +13,7 @@ class BayesianTutoringAgent:
         }
         self.mastery_threshold = 0.85
         self.struggle_threshold = 0.40
+        self.recent_errors = {}
 
     @classmethod
     def fit_from_telemetry(cls, df: pd.DataFrame):
@@ -66,30 +67,39 @@ class BayesianTutoringAgent:
         p_next = post_given_obs + (1 - post_given_obs) * p_learn - (post_given_obs * p_forget)
         return p_obs, p_next
 
-    def select_action(self, p_know: float, is_correct: bool, response_time_sec: float) -> dict:
+    def select_action(self, p_know: float, is_correct: bool = None, response_time_sec: float = None,
+                      student_id: str = "default", skill_id: str = "default",
+                      prior_errors: list = None) -> dict:
         """
         Policy function: selects action using probability state and interaction dynamics,
         without requiring human-annotated action labels.
         """
-        is_fast = response_time_sec < 10.0
-
+        # p_know is the pre-action estimate. Only prior outcomes can inform this
+        # recommendation; current correctness and response time are outcomes.
+        key = (student_id, skill_id)
+        history = self.recent_errors.setdefault(key, [])
+        if prior_errors is not None:
+            history = list(prior_errors)[-3:]
+        prior_error_count = sum(history[-3:])
         if p_know >= self.mastery_threshold:
-            if is_correct:
-                action = "ADVANCE"
-                state = "Mastered"
+            if prior_error_count >= 2:
+                action, state = "ASK", "High estimated mastery with repeated prior errors"
             else:
-                # High mastery but incorrect response indicates a slip or misread
-                action = "ASK_EXPLANATION"
-                state = "Careless Slip"
+                action, state = "ANSWER", "High estimated mastery"
         elif p_know >= self.struggle_threshold:
-            action = "PROVIDE_HINT"
-            state = "In Progress / Zone of Proximal Development"
+            action, state = "HINT", "Uncertain or partial mastery"
         else:
-            action = "TEACH_PREREQUISITE"
-            state = "Knowledge Gap"
+            action, state = "TEACH_PRIOR", "Low estimated mastery"
+
+        # Record the response only after choosing the action, so it can affect
+        # the next decision but never leak into this one.
+        if prior_errors is None and is_correct is not None:
+            history.append(0 if is_correct else 1)
+            self.recent_errors[key] = history[-3:]
 
         return {
-            "posterior_knowledge": round(p_know, 4),
+            "pre_action_mastery": round(p_know, 4),
+            "prior_errors": prior_error_count,
             "inferred_state": state,
             "prescribed_action": action,
         }
@@ -112,11 +122,13 @@ if __name__ == "__main__":
     print(f"Initial Prior P(L_0): {p_current}\n" + "-" * 60)
 
     for item in interactions:
+        # select_action recommends from the pre-action state, then records this
+        # response for the next decision. BKT is updated afterward.
+        decision = agent.select_action(p_current, item["correct"], item["latency_s"], student_id="demo", skill_id="demo")
         _, p_next = agent.update_belief(p_current, item["correct"])
-        decision = agent.select_action(p_next, item["correct"], item["latency_s"])
 
         print(f"Step {item['attempt']}: Correct={item['correct']} | Latency={item['latency_s']}s")
-        print(f"  -> Prior: {p_current:.4f} | Posterior: {decision['posterior_knowledge']}")
+        print(f"  -> Pre-action mastery: {decision['pre_action_mastery']:.4f} | Post-response mastery: {p_next:.4f}")
         print(f"  -> Inferred State: {decision['inferred_state']}")
         print(f"  -> Prescribed Action: {decision['prescribed_action']}\n")
 
