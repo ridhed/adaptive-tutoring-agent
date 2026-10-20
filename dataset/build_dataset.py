@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-"""Build chronological BKT reference labels from an authorized ASSISTments CSV."""
 import argparse
 import copy
 import csv
