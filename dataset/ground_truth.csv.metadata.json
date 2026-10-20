@@ -1,0 +1,29 @@
+{
+  "input": "dataset\\skill_builder_data.csv",
+  "output": "dataset\\ground_truth.csv",
+  "input_rows": 525534,
+  "output_rows": 459208,
+  "skipped_rows": 66326,
+  "input_sha256": "8447dd0ec41fee348e2b29f23dd69bbd686d9534191493a0e121edae57735d3c",
+  "order_source": "configured order_id when populated, otherwise timestamp, otherwise input row order",
+  "bkt_parameters": {
+    "p_initial_know": 0.591,
+    "p_guess": 0.245,
+    "p_slip": 0.116,
+    "p_learn": 0.152,
+    "p_forget": 0.0
+  },
+  "policy": {
+    "mastery_threshold": 0.85,
+    "gap_threshold": 0.4,
+    "recent_error_window": 3,
+    "ask_errors": 2
+  },
+  "split": {
+    "seed": 17,
+    "train": 0.8,
+    "validation": 0.1,
+    "test": 0.1
+  },
+  "labels_note": "correct is observed; mastery_pre/post are BKT estimates; policy_action is a rule-generated recommendation."
+}
