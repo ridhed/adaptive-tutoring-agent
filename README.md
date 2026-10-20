@@ -10,9 +10,7 @@
     
 - **Dataset:** Student-response data (`dataset/skill_builder_data.csv`) from the [SciDB Assistments Student Learning Records Dataset](https://www.scidb.cn/en/detail?dataSetId=b1c3986fc96d435e8b258a9b5c36cd7c).
 
-## Dataset construction
-
-`dataset/build_dataset.py` applies the V1 agent's BKT update to ASSISTments interactions. `correct` is observed; `mastery_pre` and `mastery_post` are BKT estimates, and `policy_action` is a rule-generated label. These are model-derived reference labels, not directly observed ground truth. See [`dataset/README.md`](dataset/README.md) for details.
+- **Dataset contruction with ground truth:**`dataset/build_dataset.py` applies the V1 agent's BKT update to ASSISTments interactions. `correct` is observed; `mastery_pre` and `mastery_post` are BKT estimates, and `policy_action` is a rule-generated label. These are model-derived reference labels, not directly observed ground truth. See [`dataset/README.md`](dataset/README.md) for details.
   
 ## 2. Problem statement
 
