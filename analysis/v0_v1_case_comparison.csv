@@ -1,0 +1,41 @@
+case_id,skill_id,correct,attempt_number,response_time_category,mastery_pre,prior_errors_last_3,reference_action,reference_reason,v0_state,v0_action,v0_matches_reference,v1_state,v1_action,v1_matches_reference,agents_agree
+TC01,70,1,1,SLOW,0.99660179,2,ASK,Mastery at least 0.85 with at least two errors in the previous three responses.,mastery,ANSWER,False,High estimated mastery with repeated prior errors,ASK,True,False
+TC02,277,0,2,SLOW,1.00000000,3,ASK,Mastery at least 0.85 with at least two errors in the previous three responses.,misconception,ASK,True,High estimated mastery with repeated prior errors,ASK,True,True
+TC03,27,0,1,SLOW,0.99333329,2,ASK,Mastery at least 0.85 with at least two errors in the previous three responses.,knowledge_gap,TEACH_PRIOR,False,High estimated mastery with repeated prior errors,ASK,True,False
+TC04,277,1,1,SLOW,0.59100000,0,HINT,Pre-action mastery from 0.40 to below 0.85.,mastery,ANSWER,False,Uncertain or partial mastery,HINT,True,False
+TC05,303,1,1,SLOW,1.00000000,0,ANSWER,Mastery at least 0.85 without two recent prior errors.,mastery,ANSWER,True,High estimated mastery,ANSWER,True,True
+TC06,311,0,3,FAST,0.99869076,3,ASK,Mastery at least 0.85 with at least two errors in the previous three responses.,misconception,ASK,True,High estimated mastery with repeated prior errors,ASK,True,True
+TC07,13,0,1,FAST,0.18447213,3,TEACH_PRIOR,Pre-action mastery below 0.40.,careless,ASK,False,Low estimated mastery,TEACH_PRIOR,True,False
+TC08,1,1,1,SLOW,0.59100000,0,HINT,Pre-action mastery from 0.40 to below 0.85.,mastery,ANSWER,False,Uncertain or partial mastery,HINT,True,False
+TC09,10,1,1,SLOW,0.30606210,1,TEACH_PRIOR,Pre-action mastery below 0.40.,mastery,ANSWER,False,Low estimated mastery,TEACH_PRIOR,True,False
+TC10,298,1,1,SLOW,1.00000000,0,ANSWER,Mastery at least 0.85 without two recent prior errors.,mastery,ANSWER,True,High estimated mastery,ANSWER,True,True
+TC11,297,0,2,SLOW,0.59100000,0,HINT,Pre-action mastery from 0.40 to below 0.85.,misconception,ASK,False,Uncertain or partial mastery,HINT,True,False
+TC12,277,1,1,SLOW,0.98891968,1,ANSWER,Mastery at least 0.85 without two recent prior errors.,mastery,ANSWER,True,High estimated mastery,ANSWER,True,True
+TC13,279,0,1,SLOW,1.00000000,3,ASK,Mastery at least 0.85 with at least two errors in the previous three responses.,knowledge_gap,TEACH_PRIOR,False,High estimated mastery with repeated prior errors,ASK,True,False
+TC14,86,0,2,SLOW,0.30606210,1,TEACH_PRIOR,Pre-action mastery below 0.40.,misconception,ASK,False,Low estimated mastery,TEACH_PRIOR,True,False
+TC15,61,0,1,FAST,0.17962231,3,TEACH_PRIOR,Pre-action mastery below 0.40.,careless,ASK,False,Low estimated mastery,TEACH_PRIOR,True,False
+TC16,277,1,1,SLOW,1.00000000,0,ANSWER,Mastery at least 0.85 without two recent prior errors.,mastery,ANSWER,True,High estimated mastery,ANSWER,True,True
+TC17,279,0,1,SLOW,1.00000000,3,ASK,Mastery at least 0.85 with at least two errors in the previous three responses.,knowledge_gap,TEACH_PRIOR,False,High estimated mastery with repeated prior errors,ASK,True,False
+TC18,49,1,1,SLOW,0.83578840,1,HINT,Pre-action mastery from 0.40 to below 0.85.,mastery,ANSWER,False,Uncertain or partial mastery,HINT,True,False
+TC19,40,1,1,SLOW,0.86352850,0,ANSWER,Mastery at least 0.85 without two recent prior errors.,mastery,ANSWER,True,High estimated mastery,ANSWER,True,True
+TC20,70,0,8,SLOW,0.27782767,2,TEACH_PRIOR,Pre-action mastery below 0.40.,misconception,ASK,False,Low estimated mastery,TEACH_PRIOR,True,False
+TC21,11,1,1,SLOW,1.00000000,0,ANSWER,Mastery at least 0.85 without two recent prior errors.,mastery,ANSWER,True,High estimated mastery,ANSWER,True,True
+TC22,311,1,1,SLOW,0.95037031,2,ASK,Mastery at least 0.85 with at least two errors in the previous three responses.,mastery,ANSWER,False,High estimated mastery with repeated prior errors,ASK,True,False
+TC23,307,1,1,SLOW,1.00000000,0,ANSWER,Mastery at least 0.85 without two recent prior errors.,mastery,ANSWER,True,High estimated mastery,ANSWER,True,True
+TC24,278,0,1,SLOW,0.59100000,0,HINT,Pre-action mastery from 0.40 to below 0.85.,knowledge_gap,TEACH_PRIOR,False,Uncertain or partial mastery,HINT,True,False
+TC25,15,1,1,SLOW,0.59100000,0,HINT,Pre-action mastery from 0.40 to below 0.85.,mastery,ANSWER,False,Uncertain or partial mastery,HINT,True,False
+TC26,34,0,1,SLOW,0.87098814,1,ANSWER,Mastery at least 0.85 without two recent prior errors.,knowledge_gap,TEACH_PRIOR,False,High estimated mastery,ANSWER,True,False
+TC27,17,0,1,SLOW,0.18073775,3,TEACH_PRIOR,Pre-action mastery below 0.40.,knowledge_gap,TEACH_PRIOR,True,Low estimated mastery,TEACH_PRIOR,True,True
+TC28,290,0,1,FAST,0.17962231,3,TEACH_PRIOR,Pre-action mastery below 0.40.,careless,ASK,False,Low estimated mastery,TEACH_PRIOR,True,False
+TC29,317,1,1,FAST,1.00000000,0,ANSWER,Mastery at least 0.85 without two recent prior errors.,mastery,ANSWER,True,High estimated mastery,ANSWER,True,True
+TC30,74,0,1,FAST,0.17980059,3,TEACH_PRIOR,Pre-action mastery below 0.40.,careless,ASK,False,Low estimated mastery,TEACH_PRIOR,True,False
+TC31,17,1,1,FAST,0.83068294,1,HINT,Pre-action mastery from 0.40 to below 0.85.,mastery,ANSWER,False,Uncertain or partial mastery,HINT,True,False
+TC32,10,0,0,FAST,0.17975420,3,TEACH_PRIOR,Pre-action mastery below 0.40.,careless,ASK,False,Low estimated mastery,TEACH_PRIOR,True,False
+TC33,47,1,1,SLOW,0.94077717,2,ASK,Mastery at least 0.85 with at least two errors in the previous three responses.,mastery,ANSWER,False,High estimated mastery with repeated prior errors,ASK,True,False
+TC34,277,1,1,SLOW,0.59100000,0,HINT,Pre-action mastery from 0.40 to below 0.85.,mastery,ANSWER,False,Uncertain or partial mastery,HINT,True,False
+TC35,311,1,1,SLOW,0.97926027,2,ASK,Mastery at least 0.85 with at least two errors in the previous three responses.,mastery,ANSWER,False,High estimated mastery with repeated prior errors,ASK,True,False
+TC36,14,1,1,SLOW,0.57001852,1,HINT,Pre-action mastery from 0.40 to below 0.85.,mastery,ANSWER,False,Uncertain or partial mastery,HINT,True,False
+TC37,92,1,1,SLOW,1.00000000,0,ANSWER,Mastery at least 0.85 without two recent prior errors.,mastery,ANSWER,True,High estimated mastery,ANSWER,True,True
+TC38,279,0,2,SLOW,1.00000000,3,ASK,Mastery at least 0.85 with at least two errors in the previous three responses.,misconception,ASK,True,High estimated mastery with repeated prior errors,ASK,True,True
+TC39,50,1,1,SLOW,0.57001852,1,HINT,Pre-action mastery from 0.40 to below 0.85.,mastery,ANSWER,False,Uncertain or partial mastery,HINT,True,False
+TC40,77,1,1,SLOW,0.18085682,3,TEACH_PRIOR,Pre-action mastery below 0.40.,mastery,ANSWER,False,Low estimated mastery,TEACH_PRIOR,True,False
