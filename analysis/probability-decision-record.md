@@ -8,7 +8,7 @@
 | ------------- | --------------------------------------------------------------------------------------------------------------- |
 | Evidence      | Student answered correctly (`correct=True`) and reported high confidence (`confidence=HIGH`)                    |
 | Hidden states | (a) Mastered ($P(L_t) \ge 0.85$), (b) Uncertain ($0.40 < P(L_t) < 0.85$), (c) Knowledge Gap ($P(L_t) \le 0.40$) |
-| Beliefs       | P(Mastered) = 0.591 (59.1%), P(Not Mastered) = 0.409 (40.9%) — sums to 100%                                     |
+| Beliefs       | P(Mastered) = 0.591 (59.1%), P(Not Mastered) = 0.409 (40.9%)                                                    |
 | Event         | True student mastery state of the target knowledge component                                                    |
 | Actions       | `ANSWER`, `ASK`, `HINT`, `TEACH_PRIOR`                                                                          |
 | Costs         | Advancing when unready causes frustration; unnecessary review wastes time                                       |
@@ -32,7 +32,7 @@
 |---|---|
 |Evidence|Student answered incorrectly (`correct=False`) and reported low confidence (`confidence=LOW`)|
 |Hidden states|Mastered, Uncertain, or Knowledge Gap|
-|Beliefs|P(Mastered) = 0.591 (59.1%), P(Not Mastered) = 0.409 (40.9%) — sums to 100%|
+|Beliefs|P(Mastered) = 0.591 (59.1%), P(Not Mastered) = 0.409 (40.9%)|
 |Event|True student knowledge state|
 |Actions|`ANSWER`, `ASK`, `HINT`, `TEACH_PRIOR`|
 |Costs|Failing to remediate severe gaps leads to downstream errors; false remediation slows progress|
@@ -56,7 +56,7 @@
 |---|---|
 |Evidence|Student answered correctly (`correct=True`) but reported low confidence (`confidence=LOW`)|
 |Hidden states|Mastered, Uncertain, or Knowledge Gap|
-|Beliefs|P(Mastered) = 0.980 (98.0%), P(Not Mastered) = 0.020 (2.0%) — sums to 100%|
+|Beliefs|P(Mastered) = 0.980 (98.0%), P(Not Mastered) = 0.020 (2.0%)|
 |Event|True student knowledge state|
 |Actions|`ANSWER`, `ASK`, `HINT`, `TEACH_PRIOR`|
 |Costs|Ignoring low confidence on high-mastery states can mask uncalibrated guesses or conceptual slips|
@@ -80,7 +80,7 @@
 | ------------- | ------------------------------------------------------------------------------------------------------------------ |
 | Evidence      | Student answered correctly (`correct=True`) with medium confidence (`confidence=MEDIUM`)                           |
 | Hidden states | Mastered, Uncertain, or Knowledge Gap                                                                              |
-| Beliefs       | P(Mastered) = 0.300 (30.0%), P(Not Mastered) = 0.700 (70.0%) — sums to 100%                                        |
+| Beliefs       | P(Mastered) = 0.300 (30.0%), P(Not Mastered) = 0.700 (70.0%)                                                       |
 | Event         | True student knowledge state                                                                                       |
 | Actions       | `ANSWER`, `ASK`, `HINT`, `TEACH_PRIOR`                                                                             |
 | Costs         | Skipping hints on partial knowledge stalls learning; giving answers outright hinders independent skill acquisition |
