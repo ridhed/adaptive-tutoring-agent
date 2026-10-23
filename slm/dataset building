@@ -1,0 +1,1052 @@
+Three research problems:
+
+1. **Learner modelling:** What can the system reasonably infer from interaction evidence, and how uncertain is that estimate?
+2. **Pedagogical decision-making:** Given the evidence, context and learning goal, what kind of support should be offered next?
+3. **Adaptive dialogue generation:** How can the selected support be communicated accurately, naturally and respectfully?
+
+The current project work provides two early baselines:
+
+- **V0 — Rule-based Expert System:** derives provisional states from correctness, attempt count and response-time category, then chooses an action using explicit rules.
+- **V1 — Bayesian Knowledge Tracing (BKT):** updates a probability of knowing a skill from observed correctness and uses the resulting estimate, along with confidence, to select an action.
+
+A separate qualitative-data pipeline is needed to curate tutoring conversations into reviewed decision-point examples for instruction tuning of a small language model (SLM). Structured interaction logs and tutoring dialogues have complementary purposes: the former support learner-state modelling and policy tests; the latter teach the SLM how pedagogical actions can be expressed in conversation.
+
+## 2. Project purpose and design principles
+
+### 2.1 Problem statement
+
+When AI immediately gives a solution, a student may complete the task without understanding the reasoning. They may lose the opportunity to explore possibilities, make mistakes, recognise patterns and experience the satisfaction of solving a problem independently.
+
+However, struggle alone is not sufficient. A learner can become discouraged when the challenge is beyond their current understanding or when guidance is inadequate. A good tutor adapts its support to the situation.
+
+### 2.2 Objective
+
+Design and evaluate an adaptive tutoring system that uses learner evidence to choose pedagogically appropriate support, communicates that support through context-aware dialogue, and helps learners develop understanding and independence over time.
+
+### 2.3 Research question
+
+> Can a system that combines learner-state estimation, pedagogical action selection and context-aware dialogue improve learning and independent problem-solving compared with a rule-based or answer-first baseline?
+
+### 2.4 Design principles
+
+Annotation rules, policy constraints and evaluation criteria.
+
+1. **Understand before guiding.** Consider the learner's goal, prior attempts and what has already been explained.
+2. **Make reasoning accessible.** Explain steps, assumptions and connections at an appropriate level.
+3. **Create room for discovery.** Use questions, hints and examples to help learners make meaningful connections.
+4. **Balance challenge with support.** Allow productive effort but change strategy when the learner needs help.
+5. **Adapt to the situation.** Do not turn every interaction into a Socratic exercise; provide direct explanations when useful.
+6. **Support reflection and judgment.** Encourage learners to examine their approach, check conclusions and recognise uncertainty.
+7. **Encourage without empty praise.** Be respectful and acknowledge specific progress.
+8. **Remain honest about limits.** Make uncertainty visible, invite verification and correct mistakes.
+9. **Preserve learner agency.** Respect learner goals and choices; do not manipulate or unnecessarily withhold information.
+10. **Help independence grow.** Reduce support when the learner can proceed, while remaining available when difficulties arise.
+
+### 2.5 What success means
+
+Potential outcomes include:
+
+- The learner can explain the underlying concept in their own words.
+- The learner can apply the concept to a new problem.
+- The learner can recognise and correct mistakes.
+- The learner makes progress towards skill mastery.
+- The learner can solve a comparable problem with less or no assistance.
+- The learner remains willing to attempt the next problem.
+- The system chooses appropriate support without over-questioning or giving answers prematurely.
+
+Engagement is not equivalent to conversation length, and immediate correctness is not equivalent to durable learning.
+
+---
+
+## 3. Scope and system boundaries
+
+### 3.1 Initial scope
+
+Start with a bounded tutoring domain, such as mathematical problem-solving, where correctness can be checked generalisation to other subjects will be treated as a later research question.
+
+The first prototype:
+
+- Accept learner interaction evidence and recent dialogue.
+- Estimate skill-level knowledge using a transparent baseline.
+- Select a pedagogical action from an explicit action set.
+- Generate a response consistent with that action.
+- Log the input evidence, state estimate, selected action and response.
+- Evaluate technical correctness and pedagogical behaviour on held-out cases.
+
+### 3.2 Out of scope for the first baseline
+
+Do not require the first version to:
+
+- Infer every psychological state of the learner.
+- Treat a single answer or response time as definitive evidence of misconception, carelessness or mastery.
+- Optimise long-term policy with reinforcement learning before the baseline is validated.
+- Generalise to every subject or age group without evaluation.
+- Replace human oversight for high-impact educational decisions.
+- Use preference optimisation or RLHF/DPO before a reliable supervised baseline and preference data exist.
+
+### 3.3 Separate observed facts from inferred states
+
+The system can observe answers, attempts, timestamps, hints and self-reported confidence. States such as `careless`, `guessing`, `misconception` and `mastery` are inferences, not directly observed ground truth.
+
+Store raw evidence separately from inferred labels and probabilities. Where evidence is ambiguous, allow the policy to ask a clarifying question or collect more evidence.
+
+---
+
+## 4. Proposed architecture
+
+The system should separate understanding the learner, choosing a tutoring action and generating the response.
+
+```text
+Learner interaction
+  ├── Current question / problem
+  ├── Learner answer and correctness
+  ├── Response time and attempt count
+  ├── Hint history and self-reported confidence
+  └── Recent dialogue history
+            |
+            v
+Input processing and feature engineering
+  ├── Schema validation and missing-value handling
+  ├── Derived features (e.g., response-time category)
+  ├── Skill/problem identification
+  └── Context-window construction
+            |
+            +-----------------------------+
+            |                             |
+            v                             v
+Learner-state estimator             Dialogue understanding
+  ├── V0: explicit rules              ├── Learner's request
+  ├── V1: BKT probability             ├── Current reasoning
+  └── Future models                  └── Relevant context
+            |                             |
+            +--------------+--------------+
+                           |
+                           v
+                 Pedagogical action policy
+                           |
+                           v
+                  SLM response generation
+                           |
+                           v
+                 Validation / safety checks
+                           |
+                           v
+                    Learner response
+                           |
+                           v
+             Log outcome and update learner state
+```
+
+### 4.1 Component responsibilities
+
+| Component | Responsibility | Important boundary |
+|---|---|---|
+| Input processing | Validate fields, derive features and construct context | Do not leak future turns into the input |
+| Learner-state estimator | Estimate knowledge of a skill and retain uncertainty | A probability is not a definitive psychological diagnosis |
+| Dialogue understanding | Interpret the learner's current request and conversational context | Do not infer unsupported mental states |
+| Pedagogical policy | Choose the next intervention from evidence and constraints | Keep decisions inspectable in the baseline |
+| SLM | Express the selected action in useful language | Fluency does not guarantee the selected action is correct |
+| Output validation | Check output schema and obvious violations | Validation is not a substitute for pedagogical review |
+| Evaluation harness | Test state calculations, policy decisions and responses | Separate offline metrics from learning-outcome claims |
+| Feedback loop | Log the next interaction and update skill estimates | Do not assume the last response caused learning without evidence |
+
+### 4.2 Recommended first implementation
+
+Use a **policy-first architecture**:
+
+1. The structured model and dialogue context are passed to an explicit policy.
+2. The policy selects an action and records the reason/evidence.
+3. The SLM receives the selected action, relevant context and response constraints.
+4. The SLM generates the response in a defined format.
+5. Validators check format and task-specific correctness where possible.
+6. The system logs the result and waits for the next learner interaction.
+
+Later, compare this with joint SLM action prediction. Policy-first design makes it easier to distinguish an action-selection error from a language-generation error.
+
+---
+
+## 5. Existing baseline: V0 Expert System
+
+### 5.1 Source basis
+
+The uploaded `V0 - Expert System.md` identifies Assistments/ASSISTments 2009 as the data source and specifies these inputs:
+
+- `student_id`
+- `kc_id`
+- `correct`
+- `time_seconds`
+- `attempt_number`
+
+The uploaded `V0_agent.py` reads fields from a CSV named `skill_builder_data.csv`, mapping:
+
+- `user_id` → `student_id`
+- `skill_id` → `kc_id`
+- `correct` → Boolean correctness
+- `attempt_count` → `attempt_number`
+- `ms_first_response` → `time_seconds` after dividing milliseconds by 1,000
+
+The script currently reads only the first 10 rows in `run_expert_system`.
+
+### 5.2 Time discretisation
+
+The current code uses:
+
+```python
+def discretize_time(time_seconds, expected_time=30.0):
+    return "FAST" if time_seconds < (expected_time * 0.3) else "SLOW"
+```
+
+With the default expected time of 30 seconds, the FAST/SLOW cutoff is 9 seconds.
+
+This is a prototype threshold. It should not be treated as universally appropriate across all questions. Compare item-specific or skill-specific reference times and define handling for missing, zero, negative or implausible response times.
+
+### 5.3 V0 decision table
+
+| Correct? | Attempt number | Response time | Provisional inferred state | Action |
+|---|---:|---|---|---|
+| No | > 1 | Any | `misconception` | `ASK` |
+| No | 1 | FAST | `careless` | `ASK` |
+| No | 1 | SLOW | `knowledge_gap` | `TEACH_PRIOR` |
+| Yes | > 1 | Any | `guessing` | `ASK` |
+| Yes | 1 | Any | `mastery` | `ANSWER` |
+
+### 5.4 Strengths and limitations
+
+**Strengths**
+- Transparent, deterministic and easy to test.
+- Provides a simple baseline for comparison.
+- Makes the mapping from observable features to actions explicit.
+
+**Limitations**
+- A fast wrong answer does not prove carelessness.
+- A correct answer after multiple attempts does not prove guessing.
+- A correct first attempt does not establish mastery.
+- The rules do not account for uncertainty or a learner's skill history beyond the supplied row.
+- The fixed expected-time default may not fit different items or learners.
+
+Treat V0 states as provisional hypotheses. Do not present them as ground-truth labels unless independently validated.
+
+---
+
+## 6. Existing baseline: V1 Bayesian Knowledge Tracing
+
+### 6.1 Source basis
+
+The uploaded `V1 - Bayesian Knowledge Tracing.md` describes BKT as a hidden binary state: `Learned` or `Not Learned`. The model updates its belief about skill knowledge using observed evidence, especially correctness.
+
+The notes list the following parameters:
+
+| Parameter | Value in the uploaded notes | Meaning |
+|---|---:|---|
+| \(P(L_0)\) | 0.591 | Initial probability of knowing the skill |
+| \(P(T)\) | 0.152 | Probability of learning between opportunities |
+| \(P(F)\) | 0.0 | Probability of forgetting |
+| \(P(G)\) | 0.245 | Probability of guessing correctly without mastery |
+| \(P(S)\) | 0.116 | Probability of slipping despite mastery |
+
+The notes say these values were calculated from a dataset. The supplied files do not include enough detail to independently verify the estimation method or establish that the parameters generalise across skills and populations. Record the estimation procedure and validate parameters before making such claims.
+
+### 6.2 BKT update
+
+Let \(p=P(L_{t-1})\) be the probability of knowing the skill before the latest observation.
+
+For a correct response:
+
+- \(P(Obs \mid L)=1-P(S)\)
+- \(P(Obs \mid \neg L)=P(G)\)
+
+For an incorrect response:
+
+- \(P(Obs \mid L)=P(S)\)
+- \(P(Obs \mid \neg L)=1-P(G)\)
+
+The marginal evidence probability is:
+
+\[
+P(Obs)=pP(Obs\mid L)+(1-p)P(Obs\mid\neg L)
+\]
+
+The posterior before the learning transition is:
+
+\[
+P(L\mid Obs)=
+\frac{pP(Obs\mid L)}
+{P(Obs)}
+\]
+
+The uploaded code then applies:
+
+\[
+P(L_t)=P(L\mid Obs)+(1-P(L\mid Obs))P(T)-P(L\mid Obs)P(F)
+\]
+
+The code function `bkt_update` returns the evidence probability, posterior given the observation, final updated probability and action.
+
+### 6.3 Current V1 action bands
+
+The notes specify these broad bands:
+
+| Updated \(P(L_t)\) | Interpretation in the notes | Typical action |
+|---|---|---|
+| \(\geq 0.85\) | Mastery band | Depends on correctness and confidence |
+| \(0.40\) to below \(0.85\) | Uncertain / partial knowledge | `HINT` |
+| Below \(0.40\) | Knowledge-gap band | `TEACH_PRIOR` in the documented low-state case |
+
+The `V1_agent.py` code implements:
+
+- If final \(P(L_t)\geq0.85\): `ANSWER` for correct + HIGH confidence; `ASK` for correct + LOW confidence; `CONFIRM` for correct cases not covered by those branches; `ASK` if incorrect.
+- If final \(P(L_t)\geq0.40\) and below 0.85: `HINT`.
+- Otherwise: `TEACH_PRIOR`.
+
+This means `CONFIRM` exists in the code even though it is absent from the documented four-action set. Resolve this discrepancy and add `CONFIRM` to the formal action specification if it is intended to remain.
+
+### 6.4 Important implementation checks
+
+1. **Parameter estimation:** document how each BKT parameter was estimated and whether estimation is global, per skill or per learner group.
+2. **Skill-level state:** maintain a probability for each learner and knowledge component (`student_id`, `kc_id`), rather than a single overall mastery value.
+3. **Confidence source:** distinguish learner-reported confidence from model-inferred confidence. The current code uses a string such as `HIGH`, `MEDIUM` or `LOW` but does not estimate confidence itself.
+4. **Confidence is not currently part of the posterior:** in `bkt_update`, confidence changes the action branch but not the Bayesian update. Preserve that distinction in reporting.
+5. **Boundary cases:** test probabilities at 0 and 1, invalid parameters, missing confidence and zero evidence probability.
+6. **Forgetting:** the supplied value \(P(F)=0\) means forgetting is disabled in the current configuration. Do not imply the implementation models forgetting in practice unless the parameter and transition behaviour are meaningfully evaluated.
+7. **Correctness and uncertainty:** BKT estimates the probability of knowing a skill under its assumptions; it does not identify a learner's precise misconception.
+8. **Thresholds:** treat 0.85 and 0.40 as initial policy thresholds to test, not universal educational standards.
+
+### 6.5 Existing scenarios in `experiments.json`
+
+The supplied file contains four scenarios:
+
+- `scenario_a`: correct answer with high confidence from a prior of 0.591.
+- `scenario_b`: incorrect answer with low confidence from a prior of 0.591.
+- `scenario_c`: correct answer with low confidence from a prior of 0.980.
+- `scenario_d`: correct answer with medium confidence from a prior of 0.300.
+
+The file records expected evidence probabilities, Bayesian posteriors, final posteriors and actions. These are useful regression-test cases. Recompute expected values independently and assert them in automated tests before relying on them as a reference.
+
+The scenarios validate specific paths through the code; they do not establish that the policy improves student learning.
+
+### 6.6 V2 direction: POMDP
+
+The V1 notes propose a POMDP as a future direction to optimise long-term learning gain rather than immediate correctness. This is a reasonable future research direction because learner knowledge is partially observed and actions may have consequences across multiple turns.
+
+Do not begin with a POMDP before validating V0/V1, defining reward/outcome measures, and gathering data capable of supporting policy evaluation. A POMDP requires defensible state, action, transition and reward assumptions.
+
+---
+
+## 7. Action taxonomy and mentor roles
+
+The project currently contains two action vocabularies. They must be mapped deliberately.
+
+### 7.1 Existing baseline actions
+
+- `ANSWER`
+- `ASK`
+- `HINT`
+- `TEACH_PRIOR`
+- `CONFIRM` (appears in the V1 code, but not in the documented baseline action set)
+
+### 7.2 Proposed Dear MiTaWa actions
+
+The project presentation proposes five actions:
+
+- `ASK_QUESTION`
+- `OFFER_HINT`
+- `EXPLAIN_CONCEPT`
+- `ALLOW_THINK_TIME`
+- `DIRECT_EXPLANATION`
+
+These five actions are the proposed tutoring taxonomy; they are not all implemented in the current V0/V1 code.
+
+### 7.3 Proposed mapping
+
+| Existing action | Proposed action | Mapping rationale / caveat |
+|---|---|---|
+| `ASK` | `ASK_QUESTION` | Ask the learner to explain, clarify or reason |
+| `HINT` | `OFFER_HINT` | Provide a limited cue to help the learner proceed |
+| `TEACH_PRIOR` | `EXPLAIN_CONCEPT` | Revisit a foundational or prerequisite concept |
+| `ANSWER` | `DIRECT_EXPLANATION` | Give the requested answer with appropriate reasoning when suitable |
+| `CONFIRM` | Usually a confirmation question or response within a defined action | Decide whether it should become a separate action or be mapped consistently |
+
+This mapping is a design proposal to validate. The action labels are not always interchangeable. For example, a direct answer and a conceptual explanation can overlap but serve different needs.
+
+### 7.4 Operational definitions for the five actions
+
+| Action | Definition | Use when | Avoid when |
+|---|---|---|---|
+| `ASK_QUESTION` | Ask a relevant question that elicits reasoning, clarifies a need or checks understanding | The learner's thinking is unclear, or a question could usefully advance reasoning | The learner has already answered the question repeatedly or clearly requests a needed explanation |
+| `OFFER_HINT` | Give a small, targeted cue without disclosing the full solution unnecessarily | The learner can likely make progress with limited support | Repeated hints have failed or the learner needs a prerequisite explanation |
+| `EXPLAIN_CONCEPT` | Explain the idea, relationship or prerequisite behind the task | A conceptual gap is plausible or the learner needs a mental model | The learner only needs a short factual clarification and a long lesson would be disproportionate |
+| `ALLOW_THINK_TIME` | Invite the learner to attempt or reflect, then wait for their next interaction | The learner has enough information to try independently | The learner is blocked, has asked for direct help or needs an initial explanation |
+| `DIRECT_EXPLANATION` | Give a clear direct answer and the reasoning needed for the request | Direct explanation is useful, requested or necessary to resolve confusion | A short, useful hint or question is likely to better serve the immediate learning goal |
+
+`ALLOW_THINK_TIME` has no direct equivalent in the current V0/V1 action sets. It needs explicit policy behaviour, including a rule against sending repeated prompts simply because the learner has not immediately replied.
+
+### 7.5 Mentor roles are a separate dimension
+
+Teacher, Friend, Philosopher and Guide describe qualities of support, not mutually exclusive actions.
+
+| Role | Intended quality | Illustrative behaviour |
+|---|---|---|
+| `TEACHER` | Makes the concept understandable | Explains the relationship between division and the number of groups |
+| `FRIEND` | Creates an approachable, respectful interaction | Acknowledges that an idea can feel counterintuitive |
+| `PHILOSOPHER` | Examines assumptions and reasoning | Asks why the learner expects division always to make a number smaller |
+| `GUIDE` | Helps the learner discover a next step | Suggests drawing three circles and splitting each into halves |
+
+A role may use several actions, and an action may be delivered through several roles. For the first SLM dataset, assign one primary action and one primary role per example using a consistent annotation guide. If a response performs several actions, annotate the dominant action or split/rewrite the target during review.
+
+---
+
+## 8. Data strategy: structured logs and qualitative dialogue
+
+### 8.1 Two complementary data streams
+
+| Data stream | Purpose | Example |
+|---|---|---|
+| Structured interaction logs | Estimate skill knowledge and test policy decisions | Correctness, response time, attempts, hints, skill history |
+| Qualitative tutoring dialogues | Learn how pedagogical actions are expressed in conversation | A tutor asks a guiding question, gives a hint or explains a concept |
+| Human-reviewed decision points | Turn conversations into approved context–action–response examples | Prior context, action label, role and target reply |
+| Evaluation set | Test generalisation and intended behaviour | Held-out conversations, policy cases and failure scenarios |
+
+The ASSISTments data used in V0/V1 is useful for structured interaction modelling. It is not, by itself, a substitute for multi-turn pedagogical dialogue.
+
+Do not assume that a historical tutor reply is automatically the optimal action, or that a BKT posterior is itself a conversational target.
+
+### 8.2 Candidate conversation datasets
+
+The following repositories were identified as candidates during project discussion. Their current availability, exact contents, counts and licences must be checked directly before use. Do not rely on remembered counts or descriptions in place of the current dataset cards.
+
+1. **Eedi Question-Anchored Tutoring Dialogues**  
+   https://huggingface.co/datasets/Eedi/Question-Anchored-Tutoring-Dialogues-2k  
+   Candidate for investigating tutoring interventions and pedagogical talk moves.
+
+2. **MathDial**  
+   https://huggingface.co/datasets/eth-nlped/mathdial  
+   Candidate for mathematical tutoring dialogues, explanations and guided reasoning.
+
+3. **ConvoLearn**  
+   https://huggingface.co/datasets/masharma/convolearn  
+   Candidate for multi-turn learning conversations and learner participation.
+
+4. **SocraTeach Multi**  
+   Search the exact dataset name at https://huggingface.co/datasets  
+   Candidate mentioned for Socratic or question-led teaching. Verify the exact repository, annotation scheme, source and licence before including it.
+
+### 8.3 Dataset audit checklist
+
+For each source, record:
+
+- Exact repository and version/revision.
+- Dataset card and source documentation.
+- Licence, commercial-use permissions and derivative-model restrictions.
+- Whether the dialogue is human-written, model-generated or mixed.
+- Languages, subject area and intended learner population.
+- Fields available and whether action labels are supplied.
+- Whether the full context required for a target response is available.
+- Privacy and personal-information risks.
+- Known duplicates or overlap with other datasets.
+- Allowed storage, redistribution and model-training use.
+
+Do not combine sources only to maximise row count. Prefer relevant, well-understood, legally usable data with reliable provenance.
+
+---
+
+## 9. Data pipeline: raw conversations to golden decision points
+
+The pipeline should preserve source records, extract candidate decisions, apply automatic checks, use AI triage to prioritise review and reserve final approval for human reviewers.
+
+```text
+Raw source conversations (immutable)
+             |
+             v
+Normalisation and privacy-aware cleaning
+             |
+             v
+Decision-point candidate extraction
+             |
+             v
+Automatic quality gates
+             |
+             v
+AI-assisted triage / prioritisation
+             |
+             v
+Human review: approve, edit or reject
+             |
+             v
+Golden dataset with provenance and versioning
+             |
+             v
+Conversation-level train / validation / test split
+             |
+             v
+SFT training data and held-out evaluation data
+```
+
+### 9.1 Raw source records
+
+Keep raw source records immutable. Store source identifiers, conversation identifiers, message/turn identifiers and any permitted licence metadata. Keep cleaned data in a separate version.
+
+### 9.2 Decision-point extraction
+
+A decision point contains:
+
+- Context available **before** the tutor's target reply.
+- One target tutor reply.
+- Proposed action and role labels.
+- Provenance and source identifiers.
+- Annotation notes and review status.
+
+Do not include future turns in the context. Future learner responses may be used later to evaluate outcomes, but they must not be exposed as input features for a decision that occurred earlier.
+
+### 9.3 Context-window selection
+
+The data-pipeline guide suggests trying history windows rather than assuming one is correct. A window of seven previous messages can be a starting experiment, not a universal default.
+
+Compare short, medium and full-context variants. Choose the smallest window that preserves the information reviewers need to judge the target action. Assess both annotation quality and model performance, not only token length.
+
+### 9.4 Automatic quality gates
+
+Possible automatic checks:
+
+- Required fields exist and are non-empty.
+- Message roles and target types are valid.
+- Target response exists and is not an accidental empty string.
+- Source record and target turn can be traced.
+- Duplicate and near-duplicate examples are detected.
+- Length limits are respected.
+- Personal information is identified and removed or masked where appropriate.
+- Data conforms to the agreed schema.
+- The target is not accidentally included in the preceding context.
+
+Automatic checks validate structure and flag obvious issues. They cannot certify that the pedagogical response is good.
+
+### 9.5 AI-assisted triage
+
+An AI judge may score or flag candidates for:
+
+- Relevance to the current learner context.
+- Action-label plausibility.
+- Grounding in the available problem and conversation.
+- Factual or mathematical correctness.
+- Respectful tone and proportionality.
+- Alignment with learner-agency principles.
+
+Use AI triage to sort examples and focus human effort. Do not use an AI score as final approval without validation.
+
+### 9.6 Human review
+
+Reviewers should decide whether the target action was appropriate given the evidence available at that turn, whether the response is accurate and useful, and whether it aligns with project principles.
+
+Possible outcomes:
+
+- `APPROVED`
+- `APPROVED_EDITED`
+- `REJECTED`
+- `NEEDS_SECOND_REVIEW`
+
+Record the reason for edits and rejections. Rejected replies must not become positive SFT targets. They may be retained in a separate failure-analysis or preference dataset if source rights and privacy rules permit.
+
+### 9.7 Golden-data acceptance
+
+A training-eligible example should have:
+
+- Valid schema.
+- Valid source provenance.
+- Required privacy checks completed.
+- Action and role labels.
+- Human review status.
+- No unresolved critical issue.
+- A documented dataset version.
+
+Start with approximately 100–300 manually reviewed decision points as a pilot. This is a practical way to test the pipeline and annotation guide, not a claim that this amount is sufficient to train a capable SLM. Expand after reviewing label coverage, reviewer agreement and error patterns.
+
+---
+
+## 10. Illustrative raw conversation and decision points
+
+**Important:** the following conversation is synthetic and was created to demonstrate the schema. It is not claimed to be an actual record from MathDial, Eedi or another source dataset.
+
+### 10.1 Raw conversation example
+
+```json
+{
+  "conversation_id": "demo_math_001",
+  "messages": [
+    {
+      "turn_id": 1,
+      "role": "user",
+      "content": "Why does dividing by one-half make a number bigger?"
+    },
+    {
+      "turn_id": 2,
+      "role": "assistant",
+      "content": "What do you think division usually does to a number?"
+    },
+    {
+      "turn_id": 3,
+      "role": "user",
+      "content": "It makes the number smaller."
+    },
+    {
+      "turn_id": 4,
+      "role": "assistant",
+      "content": "Imagine you have three pizzas. If each serving is half a pizza, how many servings can you make?"
+    },
+    {
+      "turn_id": 5,
+      "role": "user",
+      "content": "Six servings."
+    },
+    {
+      "turn_id": 6,
+      "role": "assistant",
+      "content": "Correct. Dividing by one-half asks how many half-sized portions fit into three wholes."
+    },
+    {
+      "turn_id": 7,
+      "role": "user",
+      "content": "Oh, so division can mean counting how many groups fit?"
+    },
+    {
+      "turn_id": 8,
+      "role": "assistant",
+      "content": "Exactly. Can you apply that idea to four divided by one-half?"
+    }
+  ]
+}
+```
+
+### 10.2 Candidate decision points
+
+| ID | Immediate learner evidence | Candidate tutor target | Proposed action | Possible role |
+|---|---|---|---|---|
+| DP-01 | Asks why division by one-half increases a number | “What do you think division usually does to a number?” | `ASK_QUESTION` | `FRIEND` |
+| DP-02 | Says division makes a number smaller | Pizza-serving question | `ASK_QUESTION` | `GUIDE` |
+| DP-03 | Answers “Six servings” | Explanation that division counts half-sized portions | `EXPLAIN_CONCEPT` | `TEACHER` |
+| DP-04 | Connects division to counting groups | Asks learner to apply the idea to four divided by one-half | `ASK_QUESTION` | `GUIDE` |
+
+These action and role labels are illustrative annotations created for this example, not labels supplied by a source dataset. Human reviewers may choose different labels under the final annotation guide.
+
+### 10.3 Proposed decision-point schema
+
+Keep provenance and review fields in the data layer even if they are not passed to the SLM.
+
+```json
+{
+  "example_id": "demo_math_001_t06",
+  "conversation_id": "demo_math_001",
+  "source": {
+    "dataset": "synthetic_demo",
+    "source_record_id": "demo_math_001",
+    "target_turn_id": 6
+  },
+  "context": [
+    {
+      "role": "user",
+      "content": "Why does dividing by one-half make a number bigger?"
+    },
+    {
+      "role": "assistant",
+      "content": "What do you think division usually does to a number?"
+    },
+    {
+      "role": "user",
+      "content": "It makes the number smaller."
+    },
+    {
+      "role": "assistant",
+      "content": "Imagine you have three pizzas. If each serving is half a pizza, how many servings can you make?"
+    },
+    {
+      "role": "user",
+      "content": "Six servings."
+    }
+  ],
+  "target": {
+    "action": "EXPLAIN_CONCEPT",
+    "mentor_role": "TEACHER",
+    "response": "Correct. Dividing by one-half asks how many half-sized portions fit into three wholes."
+  },
+  "annotation": {
+    "learning_need": "Connect division to the number of equal-sized groups",
+    "evidence_basis": "Learner correctly counted half-sized servings",
+    "annotator_confidence": "medium"
+  },
+  "review": {
+    "status": "candidate",
+    "human_approved": false,
+    "reviewer_id": null,
+    "reason": null
+  }
+}
+```
+
+The `learning_need` should describe evidence-supported needs rather than assert an unobserved mental state. `annotator_confidence` describes confidence in the annotation, not the learner's self-reported confidence.
+
+### 10.4 SFT JSONL example
+
+Once reviewed and approved, convert the example to the chat format expected by the chosen training framework. The following is an illustrative record; it is not a record from a source dataset.
+
+```json
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are Dear MiTaWa, an adaptive learning mentor. Help learners develop understanding and independence. Choose an appropriate pedagogical action based on available evidence. Do not assume a learner's mental state with certainty. Ask, hint, explain, allow thinking time, or provide a direct explanation when appropriate. Be accurate, respectful, and concise. Return only valid JSON with action, mentor_role, and response."
+    },
+    {
+      "role": "user",
+      "content": "CONTEXT:\nLearner: Why does dividing by one-half make a number bigger?\nTutor: What do you think division usually does to a number?\nLearner: It makes the number smaller.\nTutor: Imagine you have three pizzas. If each serving is half a pizza, how many servings can you make?\nLearner: Six servings.\n\nSelect the next pedagogical action and produce the tutor response."
+    },
+    {
+      "role": "assistant",
+      "content": "{\"action\":\"EXPLAIN_CONCEPT\",\"mentor_role\":\"TEACHER\",\"response\":\"Correct. Dividing by one-half asks how many half-sized portions fit into three wholes.\"}"
+    }
+  ]
+}
+```
+
+The final SFT format depends on the chosen training library. Preserve the same conceptual contract even if the framework uses a different representation.
+
+### 10.5 Data split and leakage prevention
+
+Split by complete conversation or source group, not by individual decision-point rows. Otherwise, turns from the same conversation can appear in both training and test data and make performance appear better than it is.
+
+Recommended sequence:
+
+1. Identify source conversations and duplicate/near-duplicate groups.
+2. Assign entire conversations to train, validation or test.
+3. Extract decision points within their assigned split.
+4. Keep the test set unchanged while refining the model.
+5. Report results by source as well as overall.
+
+---
+
+## 11. SLM training strategy
+
+### 11.1 What the SLM should learn
+
+The initial SLM task can be represented as:
+
+**Input:** current problem, available learner evidence, recent dialogue and (for policy-conditioned generation) the selected action.
+
+**Output:** a structured action/role/response record, or just the response if the action has already been selected by the policy.
+
+The model should learn:
+
+1. How to express the selected action appropriately.
+2. How to use relevant conversation context.
+3. How to provide accurate and grounded tutoring responses.
+4. How to maintain a respectful, concise and learner-centred tone.
+5. How to acknowledge uncertainty and ask for clarification when evidence is insufficient.
+
+SFT teaches imitation of reviewed examples. It does not by itself prove that the labels are optimal or that learners benefit from the response.
+
+### 11.2 Compare training designs
+
+| Design | How it works | Strength | Limitation |
+|---|---|---|---|
+| Policy-first, SLM-second | External policy chooses the action; SLM generates a response | Easier to inspect and debug | Requires reliable component integration |
+| Joint SLM output | SLM predicts action, role and response together | Can learn contextual patterns in one model | Fluent wording can conceal a poor action decision |
+| Hybrid | Policy proposes or constrains action; SLM generates response and may flag ambiguity | Combines control and flexibility | More components to evaluate |
+
+**Recommended first experiment:** policy-first response generation. Compare with joint prediction after the baseline works.
+
+### 11.3 Training sequence
+
+1. **SFT:** train on approved context–action–role–response examples.
+2. **Efficient fine-tuning:** compare a full fine-tuning baseline only if feasible; test LoRA or QLoRA where supported by the model and hardware.
+3. **Behavioural evaluation:** evaluate each action class, grounding, response quality, formatting and failure modes.
+4. **Preference data, if justified:** collect human-reviewed comparisons for the same context. Consider DPO or another preference method only if the SFT system has a demonstrated weakness and reliable preference labels exist.
+5. **Deployment optimisation:** measure actual latency, memory, throughput and quality. Evaluate quantisation after establishing model quality.
+
+Do not start with RLHF/DPO or reinforcement learning before the action taxonomy, SFT dataset and evaluation set are reliable.
+
+### 11.4 Base-model selection criteria
+
+Choose a base/instruction model only after specifying:
+
+- Intended language(s), subject and learner age range.
+- Required context length.
+- Whether the model can follow the required structured output format.
+- Licence and permitted use.
+- Available GPU/CPU memory and training budget.
+- Inference latency and deployment environment.
+- Baseline performance on your held-out tutoring evaluation set.
+- Fine-tuning support and quantisation compatibility.
+
+Do not choose based only on parameter count or benchmark reputation. Test the same evaluation set across viable candidates.
+
+---
+
+## 12. Evaluation framework
+
+Evaluation must cover three distinct levels: technical correctness, pedagogical behaviour and learning outcomes.
+
+### 12.1 Level 1: technical correctness
+
+| Question | Suggested metric/test |
+|---|---|
+| Are BKT calculations correct? | Unit tests against independently calculated evidence probabilities, posteriors and transitions |
+| Does the policy follow the rules? | Decision-table coverage and action confusion matrix |
+| Is output valid? | JSON validity and schema compliance |
+| Is the response grounded? | Human-rated grounding and unsupported-claim checks |
+| Is the action appropriate? | Human-reviewed action accuracy and per-class precision/recall |
+| Is performance reproducible? | Versioned dataset, configuration, code and seed/logging where applicable |
+
+Agreement with a historical tutor label is not proof that the label is pedagogically optimal.
+
+### 12.2 Level 2: pedagogical behaviour
+
+Evaluate whether the system:
+
+- Gives a useful hint without prematurely disclosing the entire solution.
+- Asks relevant questions rather than generic or repetitive ones.
+- Explains prerequisites when needed.
+- Gives direct explanations when appropriate.
+- Stops asking questions when the learner has already demonstrated understanding.
+- Allows thinking time without pressuring the learner.
+- Changes strategy when repeated hints fail.
+- Responds respectfully to errors and avoids empty praise.
+- Handles ambiguous or contradictory evidence without confidently inventing a misconception.
+- Remains consistent across multiple turns.
+
+Use a human-reviewed scenario set with clear expected behaviours, including missing information, contradictory signals and edge cases.
+
+### 12.3 Level 3: learning outcomes
+
+| Outcome | Possible operational measure |
+|---|---|
+| Mastery acquisition | Change in skill performance from pre-test to post-test |
+| Transfer | Performance on new problems testing the same concept |
+| Retention | Delayed assessment, if feasible |
+| Independent problem-solving | Ability to solve a comparable problem with less or no assistance |
+| Engagement | Completion, return rate or willingness to attempt another problem, interpreted carefully |
+| Learner agency | Ability to explain reasoning, identify uncertainty and make progress without over-relying on the tutor |
+
+A synthetic test suite can validate software and policy behaviour, but it cannot establish that Dear MiTaWa improves learning outcomes. Claims about learning improvement require appropriate evaluation with learners and ethical safeguards.
+
+### 12.4 Baselines to compare
+
+Use identical held-out cases for offline comparisons:
+
+1. V0 rule-based policy.
+2. V1 BKT-informed policy.
+3. SLM-only action selection.
+4. Hybrid BKT/policy plus SLM response generation.
+5. Direct-answer baseline where appropriate.
+
+For causal learning claims, use an appropriate controlled pilot or other defensible study design, with consent, privacy protection and human oversight.
+
+---
+
+## 13. Failure-mode analysis
+
+Maintain a structured failure log. For each failure, record the input, state estimate, selected action, generated response, expected behaviour, severity and proposed fix.
+
+| Failure mode | Example | Desired behaviour |
+|---|---|---|
+| Over-questioning | Learner asks for a definition but the model keeps asking Socratic questions | Give the needed explanation when appropriate |
+| Premature answer | Model supplies the whole solution before the learner has a chance to try | Consider a question or hint when it serves the learner's goal |
+| False mastery | Correct guess is treated as definitive mastery | Gather additional evidence where useful |
+| False misconception | One wrong answer is treated as proof of a misconception | Ask for clarification or collect more evidence |
+| Repetitive hinting | Learner remains stuck after several hints | Change strategy, explain a prerequisite or provide a direct explanation |
+| Unsupported explanation | SLM invents a fact or misrepresents the problem | Ground and verify the response |
+| Overlong response | A simple request receives a full lesson | Match response length to the need |
+| Unhelpful waiting | System tells learner to think but does not respond appropriately later | Wait for the next interaction and adapt |
+| Confidence mismatch | Correctness and self-reported confidence conflict | Verify understanding without treating either signal as definitive |
+| Dependency | Tutor repeatedly completes tasks for the learner | Encourage independent attempts and transfer |
+| Context leakage | Future turns appear in the input for an earlier decision | Enforce strict chronological extraction |
+| Dataset leakage | Turns from the same conversation enter train and test | Split by conversation/source group |
+| Label inconsistency | Similar examples receive conflicting action labels | Improve annotation guidance and reviewer calibration |
+| Source/rights issue | Dataset licence does not permit intended training or redistribution | Verify permissions before use and document restrictions |
+
+---
+
+## 14. Experiment management
+
+Use `experiments.json` as the start of a reproducible test suite, not merely as a collection of illustrative scenarios.
+
+For each experiment, record:
+
+- Experiment ID.
+- Hypothesis and rationale.
+- Dataset/version.
+- Code, model or policy version.
+- Input values and parameters.
+- Expected behaviour.
+- Observed result.
+- Metrics.
+- Failure analysis.
+- Decision: keep, revise or reject.
+
+### 14.1 Initial experiment groups
+
+**Learner-model experiments**
+- Verify BKT calculations.
+- Validate parameter estimation.
+- Compare global versus skill-specific parameters where data supports it.
+- Examine sensitivity to noisy correctness and missing confidence.
+- Test response-time thresholds.
+
+**Policy experiments**
+- Compare actions under identical learner states and dialogue contexts.
+- Test confidence and correctness conflicts.
+- Test repeated errors and repeated hints.
+- Measure action coverage and decision consistency.
+
+**SLM experiments**
+- Compare base instruction model with SFT model.
+- Compare policy-first generation with joint action prediction.
+- Measure format validity, grounding, action agreement, response quality and per-class behaviour.
+- Review failure cases, not just aggregate scores.
+
+Change one major factor at a time where practical, so that improvements can be attributed to a specific intervention.
+
+---
+
+## 15. Proposed four-month roadmap
+
+The project presentation proposes a four-month push with additional buffer if required. The following sequence prioritises testable deliverables.
+
+### Month 1 — Data curation and reliable baselines
+
+**Work**
+- Finalise action taxonomy and annotation guidance.
+- Audit candidate dialogue datasets, licences and fields.
+- Build the raw-data-to-decision-point pipeline.
+- Correct and test V0 and V1.
+- Manually review an initial 100–300 decision points.
+
+**Deliverables**
+- Dataset audit table.
+- Versioned decision-point schema.
+- Reviewed pilot set.
+- V0/V1 regression tests and baseline report.
+
+### Month 2 — Learner modelling and policy evaluation
+
+**Work**
+- Validate BKT parameter estimation and skill-level tracking.
+- Test response-time and confidence features without over-interpreting them.
+- Reconcile baseline and proposed action labels.
+- Compare history windows and policy variants.
+
+**Deliverables**
+- Documented learner-state model.
+- Explicit action policy.
+- Decision-test suite.
+- Evaluation benchmark and error analysis.
+
+### Month 3 — SLM baseline and efficient fine-tuning
+
+**Work**
+- Select a suitable base/instruction model using licence, hardware and held-out evaluation criteria.
+- Convert reviewed examples to SFT format.
+- Compare policy-first generation and joint prediction.
+- Run SFT, then LoRA/QLoRA experiments if supported.
+- Evaluate action classes and failure cases.
+
+**Deliverables**
+- Reproducible fine-tuning experiment.
+- Working tutoring prototype.
+- Model evaluation report.
+
+### Month 4 — Integration and behaviour analysis
+
+**Work**
+- Integrate learner model, policy and SLM.
+- Test hallucinations, over-questioning, false mastery and dependency risks.
+- Compare with rule-based and direct-answer baselines.
+- Measure latency, memory and output quality.
+- Document limitations and next research questions.
+
+**Deliverables**
+- End-to-end prototype.
+- Reproducible evaluation harness.
+- Failure-mode report.
+- Technical project report and next-stage plan.
+
+POMDPs, DPO and other advanced approaches can remain future directions unless earlier experiments establish a clear need. A four-month schedule is a target, not a guarantee; extend it rather than skipping data quality and evaluation.
+
+---
+
+## 16. Decisions to finalise
+
+These choices should be resolved before large-scale training.
+
+- [ ] **Action taxonomy:** define each of the five proposed actions, its boundaries and its mapping from existing V0/V1 actions.
+- [ ] **Mentor roles:** define Teacher, Friend, Philosopher and Guide separately from action labels.
+- [ ] **Initial domain:** choose a bounded subject and learner population.
+- [ ] **Dialogue sources:** verify exact dataset versions, licences, fields and restrictions.
+- [ ] **Decision-point schema:** finalise context, target, action, role, provenance, annotator confidence and review status.
+- [ ] **Learner-state contract:** define skill-level probabilities, missing-data handling and confidence source.
+- [ ] **Baseline correctness:** resolve the V1 `CONFIRM` discrepancy and verify expected outputs independently.
+- [ ] **Evaluation split:** define conversation-level train/validation/test separation and leakage checks.
+- [ ] **Success criteria:** define measurable thresholds for technical and pedagogical performance before comparing models.
+- [ ] **Ethics and privacy:** define consent, data retention, learner privacy and human oversight requirements for any learner study.
+
+---
+
+## 17. Immediate next steps
+
+The recommended order is:
+
+1. **Audit the V0/V1 implementations.** Resolve the difference between the code and documented action sets, independently verify BKT outputs and document parameter estimation.
+2. **Freeze a first action taxonomy.** Define when each action should and should not be used, with positive and negative examples.
+3. **Build the decision-point pipeline.** Use one suitable dialogue dataset first, preserve provenance and extract candidates using only prior context.
+4. **Review the first 100–300 candidates.** Check action coverage, label consistency and whether reviewers can apply the guidance reliably.
+5. **Create the held-out evaluation set.** Include real held-out conversations and synthetic edge cases; keep them separate from training.
+6. **Run the baselines.** Compare V0 and V1 policy behaviour before attributing any improvement to an SLM.
+7. **Run the first SFT experiment.** Test whether reviewed decision points improve response quality for a selected action.
+8. **Integrate and evaluate.** Only then expand the architecture or investigate preference optimisation and long-horizon policies.
+
+The first meaningful SLM research question is:
+
+> Does instruction tuning on human-reviewed tutoring decision points improve the quality, consistency and grounding of responses generated for a selected pedagogical action?
+
+This is more specific and testable than asking whether a fine-tuned model can produce tutoring-like dialogue.
+
+---
+
+## 18. Project contribution and research framing
+
+Dear MiTaWa brings together three connected problems:
+
+- **Learner modelling:** what the system can reasonably infer from interaction evidence.
+- **Pedagogical decision-making:** what kind of support is appropriate given the evidence and its uncertainty.
+- **Adaptive dialogue generation:** how to communicate that support in a way that promotes understanding and preserves learner agency.
+
+V0 and V1 provide preliminary, inspectable baselines for state estimation and action selection. The qualitative-data pipeline and SLM experiments can teach the system how tutoring actions are expressed in conversation. Evaluation then tests whether these components work together as intended.
+
+The project's distinguishing contribution should not be that it uses an SLM, BKT or a particular fine-tuning method. It should be the **systematic evaluation of how learner evidence, pedagogical decisions and conversational responses work together to support independent learning**.
+
+The core principle is:
+
+> AI should make learners more capable, not make their own reasoning unnecessary.
+
+That principle should be reflected in the system's decisions, data labels, evaluation design and observed outcomes—not only in its description.
+
+---
+
+## Appendix A. Source basis and interpretation
+
+This blueprint consolidates the uploaded project materials and prior planning discussion.
+
+### Source files inspected
+
+- `V0_agent.py` — current rule-based baseline implementation.
+- `V0 - Expert System.md` — V0 inputs, hidden-state labels, decision table and reference notes.
+- `V1_agent.py` — BKT update function and action-selection branches.
+- `V1 - Bayesian Knowledge Tracing.md` — BKT formulation, listed parameters, thresholds and future POMDP direction.
+- `experiments.json` — four BKT example scenarios with expected outputs.
+- `Dear MiTaWa - Brief Project Summary.pdf` — project motivation and intended characteristics of the AI mentor.
+- `Dear MiTaWa (2).pdf` — project presentation, example dialogue, proposed five-action output space, model-training contributions and roadmap.
+- `The Data Pipeline.html` — pipeline guidance around context windows, candidate decision points, automatic checks, AI triage, human review and golden data.
+
+### Interpretation rules used in this document
+
+- Details explicitly found in the source files are described as current project specifications or implementations.
+- Architecture extensions, schema examples, mappings, evaluation plans and roadmap refinements are recommendations.
+- The pizza/division conversation and its labels are synthetic illustrations, not claims about the contents of an external dataset.
+- Candidate external datasets are not treated as approved sources until their current cards, licences and contents have been verified.
+- No learning-improvement claim is made without an appropriate learner-outcome evaluation.
