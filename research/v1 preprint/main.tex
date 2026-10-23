@@ -1,0 +1,173 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+% NOTE: Approximation of the IJCAI two-column layout. The official IJCAI-27
+% author kit (ijcai27.sty) could not be downloaded in the build sandbox.
+% Replace this preamble with the official style before any real submission.
+\usepackage[letterpaper,top=0.75in,bottom=1in,left=0.75in,right=0.75in,columnsep=0.25in]{geometry}
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,booktabs,graphicx,url,microtype}
+\usepackage[numbers,square,sort&compress]{natbib}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{1.2ex plus .3ex}{0.8ex}
+\titlespacing*{\subsection}{0pt}{1ex}{0.5ex}
+\setlength{\parindent}{1em}\setlength{\parskip}{0pt}
+\pagestyle{plain}
+\newcommand{\pk}{P(L_t)}
+
+\title{\bfseries Pre-Action Bayesian Knowledge Tracing for a Tutoring Agent:\\
+Policy Design, Leakage Control, and Failure Analysis on ASSISTments}
+\author{Course project team (names to be added)\\
+\small Unpublished course preprint. Not peer reviewed, not submitted to or accepted by any venue.}
+\date{}
+
+\begin{document}
+\twocolumn[
+\maketitle
+\begin{center}\begin{minipage}{0.88\textwidth}
+\small\noindent\textbf{Abstract.}
+An adaptive tutor must choose among \textsc{Answer}, \textsc{Ask}, \textsc{Hint}, and \textsc{Teach\_Prior} before it sees a student's response. We build a Bayesian Knowledge Tracing (BKT) agent (V1) for this choice and evaluate it on 459{,}208 ASSISTments skill-builder interactions. An early V1 design chose actions from the current response and a self-reported confidence proxy; this leaks the outcome into the decision, so V1 now uses only the pre-action mastery estimate and the three previous responses. We check the BKT update by hand on four scenarios and by code, test one-step response prediction on a student-disjoint split, and compare against a rule-based V0 baseline on 40 stratified cases. BKT beats a constant baseline on held-out log loss (0.596 vs.\ 0.642) with AUC 0.701. V0 agrees with the rule-generated reference on 13/40 cases, V1 on 40/40, but the reference is built from V1's own rule, so this is a consistency check, not evidence of better tutoring. Failure analysis shows that mastery saturates near 1 with global parameters: students with three prior errors and mastery above 0.85 are correct only 5.8\% of the time. We report limitations and the human-control needed before any classroom use.
+\end{minipage}\end{center}
+\vspace{1ex}]
+
+\section{Introduction}
+\textbf{Problem.} Given a student's interaction history on one knowledge component (KC), which tutoring action should the agent take \emph{before} the next response? The hidden quantity is whether the student has learned the KC. The agent never sees it, and it cannot see the next answer when it acts.
+
+BKT~\cite{corbett1995} is a standard hidden-Markov answer to the inference part~\cite{pelanek2017,saricgrgic2024}. Our contribution is smaller and practical: (i) a four-action policy with explicit leakage control, (ii) a reproducible derived dataset with separate observed, model-estimated, and rule-generated columns, and (iii) a failure analysis that shows where the global-parameter BKT policy breaks. We do not claim improved learning; no learners were involved.
+
+\section{Related Work and User Discussions}
+\textbf{Knowledge tracing.} BKT tracks a binary latent skill state with initial-knowledge, learning, guess, and slip parameters~\cite{corbett1995}. Surveys document its wide use and its variants~\cite{pelanek2017,saricgrgic2024}. Parameter estimation is known to be fragile: fits can be non-identifiable or degenerate, and constraints have been derived~\cite{shchepakin2024}; recent work moves to Bayesian inference over parameters~\cite{pradhan2026}. Our parameters are not fitted by EM; they come from simple heuristics (Sec.~\ref{sec:model}), which makes these concerns directly relevant.
+
+\textbf{Data and confidence.} ASSISTments is a tutoring and assessment system~\cite{feng2009}. Our design notes cite Rus and \c{S}tef\u{a}nescu~\cite{rus2016} for using interaction features (time on task, hints) to infer learner state; that paper models prior knowledge in dialogue tutors with regression and does not define our HIGH/LOW confidence rule, so we treat our rule as an unvalidated project heuristic.
+
+\textbf{Discussions recorded in the project.} We had no external forum threads or interview data to analyze, and we do not invent any. The human discussion we can report is the design history in the repository notes. (1) The first V1 table mapped the \emph{post-response} posterior, correctness, and confidence to an action. The notes later mark it ``superseded'' because the current response must not decide the action recommended for that interaction. (2) The dataset notes insist that the file called \texttt{ground\_truth.csv} holds model-derived labels, not observed mastery. (3) The comparison notes state that agreement with the reference ``is not independent ground truth.'' These points shaped Sections~\ref{sec:model}--\ref{sec:fail}. A team should add dated public discussions (e.g.\ educator or developer forums) before wider release.
+
+\section{Agent Design}
+\textbf{Agent input.} For a student--KC pair at step $t$: the pre-action mastery estimate $m_t$ and the binary error indicators of the previous three responses on that pair. Observed after acting: correctness, response time, hint count, attempt count (stored, not used to choose the action).
+
+\textbf{Hidden state.} $L_t\in\{0,1\}$: the KC is learned or not. We report three \emph{zones} of belief: mastery ($m\ge 0.85$), uncertain ($0.40\le m<0.85$), gap ($m<0.40$).
+
+\textbf{Beliefs.} $m_t=P(L_t=1\mid \text{responses up to } t-1)$, initialized at $P(L_0)=0.591$.
+
+\textbf{Actions.} \textsc{Answer} (confirm and progress), \textsc{Ask} (probe understanding), \textsc{Hint} (small scaffold), \textsc{Teach\_Prior} (review a likely prerequisite).
+
+\textbf{Error costs.} Qualitative, from the design notes; we did not elicit numeric costs. Advancing an unready student causes frustration and downstream errors (cost of a false \textsc{Answer}); unnecessary review wastes time (false \textsc{Teach\_Prior}); skipping a scaffold on partial knowledge stalls learning (false \textsc{Answer} on the uncertain zone); an unneeded \textsc{Ask} interrupts a ready student. The thresholds 0.40 and 0.85 encode these costs only implicitly and were not tuned.
+
+\section{Probability Model and Decision Rule}\label{sec:model}
+With guess $g$, slip $s$, learn $\tau$, forget $f$, the likelihood of observation $o\in\{1,0\}$ (correct/incorrect) is
+$P(o{=}1\mid L)=1-s$ if $L=1$ and $g$ if $L=0$; $P(o{=}0\mid L)=s$ if $L=1$ and $1-g$ if $L=0$. With prior $m$:
+\begin{align}
+P(o) &= m\,P(o\mid 1)+(1-m)\,P(o\mid 0),\\
+\tilde m &= \frac{m\,P(o\mid 1)}{P(o)},\\
+m' &= \tilde m+(1-\tilde m)\,\tau-\tilde m\,f.
+\end{align}
+Eq.~3 is the transition. Since $f=0$ here, the posterior can only rise after the Bayes step, and $m'\ge \tilde m$.
+
+\textbf{Parameters.} $P(L_0)=0.591$, $g=0.245$, $s=0.116$, $\tau=0.152$, $f=0$, computed by \texttt{prior\_prob\_cal.py}: $P(L_0)$ is first-opportunity accuracy; $g$ is accuracy after two failures; $s$ is $1-$accuracy after two successes; $\tau$ is accuracy after a failure minus $g$. These are global heuristics, not per-skill fits.
+
+\textbf{Decision rule (pre-action).}
+\begin{equation}
+a(m,e)=\begin{cases}
+\textsc{Teach\_Prior} & m<0.40\\
+\textsc{Hint} & 0.40\le m<0.85\\
+\textsc{Ask} & m\ge 0.85,\ e\ge 2\\
+\textsc{Answer} & m\ge 0.85,\ e<2
+\end{cases}
+\end{equation}
+where $e$ is the number of errors in the previous three responses. The response then updates $m$ by Eqs.~1--3 for the next decision.
+
+\section{Test Method}
+\textbf{Data.} ASSISTments 2009--2010 skill-builder export (525{,}534 rows); 66{,}326 rows with missing or invalid required fields were skipped, leaving 459{,}208 rows, 4{,}163 students, and 123 KCs. Rows were grouped by student and KC and ordered by \texttt{order\_id}. Students (not rows) were assigned to train/validation/test 80/10/10 by a seeded hash, giving 367{,}953/47{,}152/44{,}103 rows. The test split has 376 students.
+
+\textbf{Test 1: hand and code check of the update.} Four scenarios (A--D) from the decision records were recomputed independently from Eqs.~1--3.
+
+\textbf{Test 2: held-out response prediction.} Predicted accuracy is $m(1-s)+(1-m)g$ using the stored pre-response mastery. Baseline: constant training-set accuracy ($0.694$). Metrics: AUC, log loss, Brier score on the test split.
+
+\textbf{Test 3: baseline comparison on 40 cases.} The baseline V0 is a rule agent using current correctness, attempt number, and a FAST/SLOW latency flag. We sampled 10 rows per reference action (seed 42). V1 gets $m$ and the prior error count. The reference label is the dataset builder's rule, which is Eq.~4. The 40/40 match for V1 is therefore expected by construction.
+
+\section{Results}
+\begin{table}[t]\centering\small
+\begin{tabular}{@{}lcccc@{}}\toprule
+Scenario & $m$ & $o$ & $\tilde m$ & $m'$\\\midrule
+A & 0.591 & correct & 0.8391 & 0.8635\\
+B & 0.591 & wrong & 0.1817 & 0.3061\\
+C & 0.980 & correct & 0.9944 & 0.9952\\
+D & 0.300 & correct & 0.6073 & 0.6670\\\bottomrule
+\end{tabular}
+\caption{Hand-checked updates; $P(o)$ is 0.6226, 0.3774, 0.8712, 0.4367. All values match the code.}\label{tab:upd}
+\end{table}
+
+\textbf{Update check.} All 12 numbers in Table~\ref{tab:upd} (evidence, posterior, transition) match recomputation to four decimals, with last-digit differences in $m'$ coming only from rounding of intermediate values. Note that scenarios A--D use the \emph{old} confidence-based actions; under Eq.~4 the \emph{pre-action} choices would be \textsc{Hint}, \textsc{Hint}, \textsc{Answer} (no errors given), and \textsc{Teach\_Prior}.
+
+\begin{table}[t]\centering\small
+\begin{tabular}{@{}lccc@{}}\toprule
+Model & AUC & Log loss & Brier\\\midrule
+Constant (0.694) & -- & 0.642 & 0.225\\
+BKT, global params & 0.701 & 0.596 & 0.199\\\bottomrule
+\end{tabular}
+\caption{One-step response prediction, test split (44{,}103 rows, 376 students).}\label{tab:pred}
+\end{table}
+
+\textbf{Response prediction.} BKT improves on the constant baseline in all three metrics (Table~\ref{tab:pred}). The predictor is only moderately discriminative (AUC 0.70). It is overconfident at both ends: rows predicted $\le0.40$ were correct 21.4\% of the time (predicted mean 0.365), and rows predicted in $(0.8,0.9]$ (26{,}759 of them) were correct 77.7\% of the time (predicted mean 0.878). Parameters were computed on the full export, including test students, so these numbers are slightly optimistic.
+
+\begin{table}[t]\centering\small
+\begin{tabular}{@{}lcccc@{}}\toprule
+Reference & n & V0 match & V1 match & V0 outputs\\\midrule
+\textsc{Answer} & 10 & 9 & 10 & A9, T1\\
+\textsc{Ask} & 10 & 3 & 10 & A4, K3, T3\\
+\textsc{Hint} & 10 & 0 & 10 & A8, K1, T1\\
+\textsc{Teach\_Prior} & 10 & 1 & 10 & A2, K7, T1\\\midrule
+Total & 40 & 13 & 40 & \\\bottomrule
+\end{tabular}
+\caption{40-case comparison. V0 outputs: A=\textsc{Answer}, K=\textsc{Ask}, T=\textsc{Teach\_Prior}. V0 never output \textsc{Hint}. V1 equals the reference by design.}\label{tab:cmp}
+\end{table}
+
+\textbf{Baseline comparison.} V0 matched the reference on 13/40 cases (32.5\%) and agreed with V1 on the same 13. It never produces \textsc{Hint}, so all 10 \textsc{Hint} cases fail, and it answers where the reference says \textsc{Hint} (8 of 10). This shows V0's action set differs from the reference policy; it does not show V0 teaches worse.
+
+\section{Failure Analysis}\label{sec:fail}
+\textbf{F1: saturation hides error streaks.} Among test rows with $m\ge0.85$ (28{,}507), observed accuracy falls with prior errors: 0.899 (0 errors), 0.741 (1), 0.641 (2), 0.058 (3) (Fig.~\ref{fig:err}). The model predicts about 0.88 for all of them. With $f=0$ and long success runs, $m$ reaches 1 (34.3\% of all rows have $m\ge0.9999$; 63.2\% of \textsc{Ask} rows), and then one or more errors barely move it. Example TC02 in the comparison file has $m=1.0$, three prior errors, and another error. The \textsc{Ask} rule rescues part of this, but only through the error-count patch, and \textsc{Ask} fires on just 5.7\% of rows.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.92\columnwidth]{fig_errors.pdf}
+\caption{Test-split accuracy for rows with $m\ge0.85$, by prior errors. Dashed line: BKT-predicted accuracy $\approx0.88$.}\label{fig:err}
+\end{figure}
+
+\textbf{F2: cold start.} The first interaction of every student--KC pair has $m=0.591$, so all 41{,}982 first interactions (9.1\% of rows) get \textsc{Hint}, whatever the student's history on related skills.
+
+\textbf{F3: leakage in the superseded design.} \texttt{V1\_agent.py} chooses the action from the \emph{post-response} mastery, correctness, and confidence. Scenario D starts at $m=0.30$, which Eq.~4 maps to \textsc{Teach\_Prior}, but the old code returns \textsc{Hint} because the response raised $m'$ to 0.667. The same code returns a non-existent action \textsc{CONFIRM} for correct, medium-confidence, high-mastery cases.
+
+\textbf{F4: threshold mismatch.} The design note defines the gap zone as $m\le0.40$, the code uses $m<0.40$, and the decision record says \textsc{Hint} for $0.40\le m\le0.84$. Values in $(0.84,0.85)$ are unassigned in the record.
+
+\textbf{F5: heuristic parameters and noisy fields.} $\tau$ is computed as a difference of accuracies, $f$ is fixed at 0, and the first row of the dataset has a 1{,}899 s response time (0.36\% of rows exceed 600 s). The confidence proxy has no validation. A misspecified $s$ and $g$ directly mis-set the calibration gaps in the Results.
+
+\section{Limitations, Ethics, and Human Control}
+\textbf{Limitations.} The reference actions are rule outputs, not expert labels; V1's 100\% agreement is circular. No learning outcome was measured. BKT assumes a binary state, no forgetting, and one global parameter set. Student-disjoint splits help, but parameters were not fitted on train only. We tested one baseline, one dataset (an older U.S.\ math dataset), and one seed for the 40-case sample. The human-discussion evidence is limited to repository notes.
+
+\textbf{Ethics.} Correctness is a noisy proxy for knowledge. Wrong \textsc{Teach\_Prior} labels could stigmatize learners or lower expectations. Student data must follow the source's access and redistribution terms; the 83 MB raw export is not redistributed, and the comparison file contains no student identifiers.
+
+\textbf{Human control.} The agent should only \emph{recommend}. A teacher should be able to see $m$, the error count, and the rule that fired, and to override any action. Any pilot needs ethics review, parent or school consent where required, and a controlled study that measures learning gains before claims of benefit.
+
+\section{Conclusion and New Questions}
+A pre-action BKT policy is easy to audit and removes outcome leakage, and it predicts held-out responses better than a constant. But with global parameters it saturates and ignores error streaks, so a patch rule does much of the safety work. Open questions: Do per-skill or Bayesian-fitted parameters~\cite{pradhan2026,shchepakin2024} remove the saturation? Does adding forgetting fix F1? Can expert-reviewed action labels replace the circular reference? Does the policy improve learning gains in a controlled trial? Next versions (V2, a POMDP) would add costs and long-term gain.
+
+\textbf{Code and data.} Project scripts: \texttt{build\_dataset.py}, \texttt{prior\_prob\_cal.py}, \texttt{V1\_bkt\_agent.py}, \texttt{compare\_v0\_v1\_cases.py}. No public repository URL was available when this was written; a URL should be added by the team only after confirming the repository excludes the raw data.
+
+\textbf{AI-use statement.} The agent code and design notes were written by the team. An AI assistant (Claude) was used in this session to recompute the numbers from the uploaded files, check citations by web search, draft the LaTeX text, and compile the PDF. Team members must review all claims and are responsible for them.
+
+\textbf{Contribution statement.} Names are to be filled by the team; roles below reflect the evidence in the uploaded files and this session.
+\begin{itemize}\itemsep0pt\parsep0pt
+\item \emph{Problem selection:} team [names]; not recorded in the files.
+\item \emph{Public discussions:} none collected; team [names] to add.
+\item \emph{Agent design:} team [names] (V1 design note, decision records).
+\item \emph{Software development:} team [names] (agent, builder, comparison scripts).
+\item \emph{Tests:} team ran the 40-case comparison; AI assistant re-ran Tests 1--2.
+\item \emph{Citation checks:} AI assistant by web search; team to confirm.
+\item \emph{Preprint sections:} AI assistant drafted; team [names] review.
+\item \emph{PDF checks:} AI assistant compiled and inspected; team [names] sign off.
+\end{itemize}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+\end{document}
